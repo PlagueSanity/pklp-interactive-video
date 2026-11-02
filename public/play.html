@@ -10,7 +10,7 @@
       --primary-hover: #1d4ed8;
       --success: #16a34a;
       --danger: #dc2626;
-      --bg: #0f172a;
+      --bg: #090d16;
       --surface: #1e293b;
       --text: #f8fafc;
       --text-muted: #94a3b8;
@@ -28,41 +28,65 @@
     body {
       background-color: var(--bg);
       color: var(--text);
-      min-height: 100vh;
-      min-height: 100dvh;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
 
     /* Messenger / FB in-app browser alert */
     .inapp-banner {
+      width: 100%;
       background: #f59e0b;
       color: #78350f;
-      padding: 8px 12px;
-      font-size: 0.8rem;
+      padding: 6px 12px;
+      font-size: 0.78rem;
       text-align: center;
       font-weight: 600;
+      flex-shrink: 0;
     }
 
-    /* Stage Container (Audit compliant: Grid, dvh units, no position: fixed) */
+    /* Main Stage Container */
     .stage {
       width: 100%;
-      min-height: 100vh;
-      min-height: 100dvh;
+      height: 100%;
+      max-width: 1200px;
       display: grid;
-      grid-template-rows: auto 1fr;
       background: #000;
+      overflow: hidden;
     }
 
-    /* Landscape Mode: Split screen (Video 3fr : Question 2fr) */
-    @media (orientation: landscape) and (max-height: 550px) {
+    /* Desktop & Tablets (min-width: 768px): Side-by-Side (Video Left 60% : Question Right 40%) */
+    @media (min-width: 768px) {
       .stage {
-        grid-template-columns: 3fr 2fr;
+        grid-template-columns: 1.4fr 1fr;
+        grid-template-rows: 1fr;
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      }
+    }
+
+    /* Mobile Phones (max-width: 767px): Vertical Stack (Video Top ~35vh : Question Bottom) */
+    @media (max-width: 767px) {
+      .stage {
+        grid-template-rows: auto 1fr;
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Landscape on Mobile Phone */
+    @media (max-width: 767px) and (orientation: landscape) {
+      .stage {
+        grid-template-columns: 1.4fr 1fr;
         grid-template-rows: 1fr;
       }
     }
 
-    /* Video Player Area */
+    /* Video Player Container */
     .player-container {
       position: relative;
       width: 100%;
@@ -70,13 +94,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      aspect-ratio: 16 / 9;
     }
 
-    @media (orientation: landscape) and (max-height: 550px) {
+    @media (max-width: 767px) and (orientation: portrait) {
+      .player-container {
+        height: 34vh;
+        max-height: 250px;
+      }
+    }
+
+    @media (min-width: 768px), (orientation: landscape) {
       .player-container {
         height: 100%;
-        aspect-ratio: auto;
       }
     }
 
@@ -85,65 +114,65 @@
       height: 100%;
     }
 
-    /* Question Panel (Below player in portrait, Beside player in landscape. NEVER covering iframe) */
+    /* Question Panel */
     .question-panel {
       background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 16px;
+      border-left: 1px solid var(--border);
+      padding: 14px 18px;
       overflow-y: auto;
       overscroll-behavior: contain;
-      padding-bottom: env(safe-area-inset-bottom, 16px);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
-    @media (orientation: landscape) and (max-height: 550px) {
+    @media (max-width: 767px) and (orientation: portrait) {
       .question-panel {
-        border-top: none;
-        border-left: 1px solid var(--border);
-        height: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        padding-bottom: env(safe-area-inset-bottom, 14px);
       }
     }
 
     .cp-header {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: #38bdf8;
       font-weight: 700;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .question-title {
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
       line-height: 1.35;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       color: #fff;
     }
 
-    /* 48px Touch Targets for mobile phones */
+    /* Options List */
     .options-grid {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      margin-bottom: 14px;
+      gap: 6px;
+      margin-bottom: 10px;
     }
 
     .opt-btn {
-      min-height: 48px;
-      padding: 12px 14px;
-      background: rgba(255, 255, 255, 0.06);
+      min-height: 44px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.05);
       border: 1.5px solid var(--border);
-      border-radius: 8px;
+      border-radius: 6px;
       color: #f1f5f9;
-      font-size: 0.92rem;
+      font-size: 0.88rem;
       text-align: left;
       cursor: pointer;
       display: flex;
       align-items: center;
       transition: all 0.15s ease;
+      line-height: 1.3;
     }
 
     .opt-btn:active, .opt-btn.selected {
@@ -153,20 +182,20 @@
 
     .opt-btn:disabled {
       cursor: default;
-      opacity: 0.8;
+      opacity: 0.85;
     }
 
     .btn-action {
-      min-height: 48px;
+      min-height: 44px;
       width: 100%;
       background: var(--primary);
       color: #fff;
       border: none;
-      border-radius: 8px;
-      font-size: 1rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
       font-weight: 700;
       cursor: pointer;
-      padding: 12px;
+      padding: 10px;
     }
 
     .btn-action:disabled {
@@ -175,11 +204,11 @@
     }
 
     .feedback-box {
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 0.88rem;
-      line-height: 1.4;
-      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.84rem;
+      line-height: 1.35;
+      margin-bottom: 10px;
     }
 
     .feedback-correct {
@@ -198,7 +227,7 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.95);
+      background: rgba(15, 23, 42, 0.96);
       z-index: 100;
       display: flex;
       align-items: center;
@@ -231,7 +260,7 @@
 
     input, select {
       width: 100%;
-      min-height: 48px;
+      min-height: 44px;
       padding: 10px 14px;
       background: #0f172a;
       border: 1.5px solid var(--border);
@@ -274,8 +303,8 @@
     <div class="modal-card">
       <div style="text-align: center; margin-bottom: 16px;">
         <span style="font-size: 2.2rem;">📖</span>
-        <h2 id="modal-lesson-title" style="font-size: 1.15rem; margin-top: 6px;">Aralin sa PKLP (Baitang 11)</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+        <h2 id="modal-lesson-title" style="font-size: 1.15rem; margin-top: 6px;">Naglo-load ang Aralin...</h2>
+        <p id="modal-lesson-desc" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
           Panoorin ang aralin at sagutin ang mga katanungan sa bawat checkpoint.
         </p>
       </div>
@@ -306,7 +335,7 @@
     </div>
   </div>
 
-  <!-- Main Stage: Grid layout holding Player and Question Panel (Split Screen compliant) -->
+  <!-- Main Stage: Side-by-Side on Desktop/Landscape, Compact on Mobile -->
   <main class="stage" id="main-stage">
     
     <!-- Player Container -->
@@ -321,16 +350,16 @@
       </div>
     </div>
 
-    <!-- Question Panel (Beside in landscape, Below in portrait) -->
+    <!-- Question Panel (Always Visible beside or below without scrolling) -->
     <div class="question-panel" id="question-panel">
       <!-- Waiting state while video is playing -->
-      <div id="state-watching" style="text-align: center; margin: auto 0; padding: 20px;">
-        <span style="font-size: 2rem;">📺</span>
-        <h3 style="font-size: 1rem; margin-top: 8px;">Kasalukuyang Nanonood...</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
-          Hihinto ang bidyo sa bawat pagsusuri. Huwag laktawan ang aralin.
+      <div id="state-watching" style="text-align: center; margin: auto 0; padding: 16px;">
+        <span style="font-size: 1.8rem;">📺</span>
+        <h3 style="font-size: 0.95rem; margin-top: 6px;">Kasalukuyang Nanonood...</h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
+          Awtomatikong hihinto ang bidyo sa bawat pagsusuri.
         </p>
-        <button id="btn-fullscreen" style="margin-top: 16px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); color: #fff; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+        <button id="btn-fullscreen" style="margin-top: 14px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">
           ⛶ Buong Screen (Fullscreen)
         </button>
       </div>
@@ -352,10 +381,10 @@
 
       <!-- Completion State -->
       <div id="state-completed" class="hidden" style="text-align: center; margin: auto 0;">
-        <span style="font-size: 2.5rem;">🎉</span>
-        <h3 style="font-size: 1.15rem; margin-top: 8px;">Natapos Mo ang Aralin!</h3>
-        <div style="font-size: 2.4rem; font-weight: 800; color: #38bdf8; margin: 8px 0;" id="final-score-display">0 / 3</div>
-        <p id="sync-status" style="font-size: 0.85rem; color: #4ade80; font-weight: 600;">
+        <span style="font-size: 2.2rem;">🎉</span>
+        <h3 style="font-size: 1.1rem; margin-top: 6px;">Natapos Mo ang Aralin!</h3>
+        <div style="font-size: 2.4rem; font-weight: 800; color: #38bdf8; margin: 6px 0;" id="final-score-display">0 / 3</div>
+        <p id="sync-status" style="font-size: 0.82rem; color: #4ade80; font-weight: 600;">
           Inirerehistro ang iyong iskor...
         </p>
       </div>
@@ -404,32 +433,24 @@
     const btnManualPlay = document.getElementById('btn-manual-play');
     const btnFullscreen = document.getElementById('btn-fullscreen');
 
-    // --- 2. Fetch Sanitized Lesson Data ---
-    fetch('/api/lesson')
-      .then(r => r.json())
-      .then(data => {
-        lessonData = data;
-        document.getElementById('modal-lesson-title').textContent = lessonData.title;
-        // Map checkpoints with `t` property as audited
-        checkpoints = lessonData.checkpoints.map(cp => ({
-          ...cp,
-          t: cp.timestamp || cp.t,
-          done: false
-        }));
-      })
-      .catch(err => console.error('Error fetching lesson:', err));
+    // --- 2. Robust Player Initializer (Guarantees edited video is loaded) ---
+    function initOrCuePlayer(videoId) {
+      if (!window.YT || !window.YT.Player) {
+        setTimeout(() => initOrCuePlayer(videoId), 200);
+        return;
+      }
 
-    // --- 3. YouTube Player Initialization (Audit: Preloaded during name entry) ---
-    function onYouTubeIframeAPIReady() {
-      // Default to jNQXAC9IVRw (19s demo) or lesson YouTube ID
-      const ytId = (lessonData && lessonData.youtubeId) ? lessonData.youtubeId : 'jNQXAC9IVRw';
-      
+      if (player && typeof player.cueVideoById === 'function') {
+        player.cueVideoById(videoId);
+        return;
+      }
+
       player = new YT.Player('yt-player', {
-        videoId: ytId,
+        videoId: videoId,
         playerVars: {
-          controls: 0,        // Hide scrub bar
-          disablekb: 1,       // Disable keyboard seeking
-          fs: 0,              // Disable native YT fullscreen (avoids hiding questions)
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
           modestbranding: 1,
           rel: 0,
           playsinline: 1
@@ -443,7 +464,36 @@
       });
     }
 
-    // --- 4. Synchronous Autoplay on Start Button Click (Audit rule) ---
+    window.onYouTubeIframeAPIReady = function() {
+      if (lessonData && lessonData.youtubeId) {
+        initOrCuePlayer(lessonData.youtubeId);
+      }
+    };
+
+    // --- 3. Fetch Fresh Lesson Data (Zero-Cache) ---
+    fetch('/api/lesson?_t=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => {
+        lessonData = data;
+        document.getElementById('modal-lesson-title').textContent = lessonData.title || 'Aralin sa PKLP';
+        if (lessonData.description) {
+          document.getElementById('modal-lesson-desc').textContent = lessonData.description;
+        }
+
+        // Map checkpoints with `t` property
+        checkpoints = (lessonData.checkpoints || []).map(cp => ({
+          ...cp,
+          t: Number(cp.timestamp || cp.t || 0),
+          done: false
+        }));
+
+        // Load the actual video specified by the teacher
+        const targetVideoId = lessonData.youtubeId || 'jNQXAC9IVRw';
+        initOrCuePlayer(targetVideoId);
+      })
+      .catch(err => console.error('Error fetching lesson:', err));
+
+    // --- 4. Synchronous Autoplay on Start Button Click ---
     startForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const name = studentNameInput.value.trim();
@@ -455,8 +505,7 @@
       // Immediately hide modal
       nameModal.classList.add('hidden');
 
-      // CRITICAL AUDIT RULE: Trigger playVideo() directly in the user click handler
-      // Do NOT await any fetch first!
+      // CRITICAL: Trigger playVideo() directly in the user click handler
       if (player && player.playVideo) {
         player.playVideo();
       }
@@ -474,7 +523,7 @@
       if (player && player.playVideo) player.playVideo();
     });
 
-    // --- 5. 200ms Polling Loop & Seek-Locking (Audit: Section 1) ---
+    // --- 5. 200ms Polling Loop & Seek-Locking ---
     function onPlayerStateChange(event) {
       if (event.data === YT.PlayerState.PLAYING) {
         fallbackPlay.classList.add('hidden');
@@ -488,7 +537,6 @@
         }
       }
 
-      // Check if video ended
       if (event.data === YT.PlayerState.ENDED) {
         finishLesson();
       }
@@ -517,7 +565,7 @@
       }
     }
 
-    // --- 6. Display Question (Beside or below, never covering iframe) ---
+    // --- 6. Display Question (Always visible without dragging) ---
     function showQuestion(cp) {
       activeCheckpoint = cp;
       stateWatching.classList.add('hidden');
@@ -527,7 +575,7 @@
       cpBadge.textContent = `Pagsusuri ${idx} ng ${checkpoints.length}`;
       cpText.textContent = cp.question;
 
-      // Populate options as large 48px touch buttons
+      // Populate options
       optionsContainer.innerHTML = '';
       cp.options.forEach(opt => {
         const btn = document.createElement('button');
@@ -536,7 +584,6 @@
         btn.addEventListener('click', () => {
           document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
-          btn.dataset.selected = 'true';
           btnSubmitAnswer.disabled = false;
         });
         optionsContainer.appendChild(btn);
@@ -549,12 +596,12 @@
       btnContinueVideo.classList.add('hidden');
     }
 
-    // --- 7. Answer Verification (Server-side validation) ---
+    // --- 7. Answer Verification ---
     btnSubmitAnswer.addEventListener('click', () => {
       const selectedBtn = document.querySelector('.opt-btn.selected');
       if (!selectedBtn || !activeCheckpoint) return;
 
-      const choiceId = selectedBtn.innerText.trim().charAt(0); // 'A', 'B', 'C', 'D'
+      const choiceId = selectedBtn.innerText.trim().charAt(0);
       btnSubmitAnswer.disabled = true;
       btnSubmitAnswer.textContent = 'Sinusuri...';
 
@@ -571,7 +618,6 @@
         studentAnswers[activeCheckpoint.id] = choiceId;
         activeCheckpoint.done = true;
 
-        // Display formative feedback
         cpFeedbackBox.classList.remove('hidden');
         if (res.isCorrect) {
           cpFeedbackBox.className = 'feedback-box feedback-correct';
@@ -581,9 +627,7 @@
           cpFeedbackBox.innerHTML = `<strong>✗ Maling Sagot.</strong><br>${res.feedback}`;
         }
 
-        // Lock options
         document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
-
         btnSubmitAnswer.classList.add('hidden');
         btnContinueVideo.classList.remove('hidden');
       })
@@ -600,7 +644,6 @@
       stateQuestion.classList.add('hidden');
       stateWatching.classList.remove('hidden');
 
-      // Advance clock slightly past checkpoint
       if (player && typeof player.seekTo === 'function') {
         const nextTime = activeCheckpoint.t + 0.3;
         maxWatched = Math.max(maxWatched, nextTime);
@@ -610,7 +653,7 @@
       activeCheckpoint = null;
     });
 
-    // --- 8. Custom Fullscreen Container (Audit: requestFullscreen on stage) ---
+    // --- 8. Custom Fullscreen Container ---
     btnFullscreen.addEventListener('click', () => {
       const stage = document.getElementById('main-stage');
       if (!document.fullscreenElement) {
@@ -619,15 +662,12 @@
         } else if (stage.webkitRequestFullscreen) {
           stage.webkitRequestFullscreen();
         }
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(() => {});
-        }
       } else {
         if (document.exitFullscreen) document.exitFullscreen();
       }
     });
 
-    // --- 9. Offline-Resilient Results Sync (Audit Section 3) ---
+    // --- 9. Offline-Resilient Results Sync ---
     function finishLesson() {
       stateWatching.classList.add('hidden');
       stateQuestion.classList.add('hidden');
@@ -641,16 +681,13 @@
         timestamp: new Date().toISOString()
       };
 
-      // 1. Save to phone's localStorage first (safety cache against Piso WiFi drops)
       localStorage.setItem('pklp_pending_' + submissionId, JSON.stringify(payload));
-
-      // 2. Dispatch submission to server (with retry loop)
       submitWithRetry(payload, 0);
     }
 
     function submitWithRetry(payload, attempt) {
       const syncStatus = document.getElementById('sync-status');
-      syncStatus.textContent = 'Ipinapadala ang marka sa guro...';
+      syncStatus.textContent = 'Ipinapadala ang marka sa talaan...';
       syncStatus.style.color = '#38bdf8';
 
       fetch('/api/submissions', {
@@ -661,27 +698,22 @@
       .then(r => r.json())
       .then(data => {
         document.getElementById('final-score-display').textContent = `${data.score} / ${data.total}`;
-        
-        // Remove from pending localStorage once verified
         localStorage.removeItem('pklp_pending_' + payload.submissionId);
-
-        syncStatus.textContent = '✓ Naipadala na sa talaan ng guro!';
+        syncStatus.textContent = '✓ Matagumpay na naitala ang iyong iskor!';
         syncStatus.style.color = '#4ade80';
       })
       .catch(err => {
         console.warn(`Submission attempt ${attempt + 1} failed:`, err);
-        // Exponential backoff: 2s, 4s, 8s (max 3 retries)
         if (attempt < 3) {
           const delay = Math.pow(2, attempt + 1) * 1000 + Math.random() * 500;
           setTimeout(() => submitWithRetry(payload, attempt + 1), delay);
         } else {
-          syncStatus.textContent = '⚠️ Mahina ang koneksyon. Nakatago ang iyong marka sa cellphone at awtomatikong ipapadala kapag nagka-signal muli.';
+          syncStatus.textContent = '⚠️ Nakatabi ang iyong marka sa cellphone at ipapadala kapag lumakas ang signal.';
           syncStatus.style.color = '#f59e0b';
         }
       });
     }
 
-    // Auto-retry pending submissions when device comes online
     window.addEventListener('online', () => {
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);

@@ -73,7 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 2. Load Existing Lesson
   function loadExistingLesson() {
-    fetch('/api/lesson')
+    fetch('/api/admin/lesson?_t=' + Date.now(), {
+      headers: { 'x-teacher-pin': currentPin },
+      cache: 'no-store'
+    })
       .then(r => r.json())
       .then(lesson => {
         lessonTitle.value = lesson.title || '';
@@ -83,12 +86,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         checkpoints = (lesson.checkpoints || []).map(cp => ({
           id: cp.id,
-          t: cp.timestamp || cp.t,
+          t: Number(cp.timestamp || cp.t || 0),
           question: cp.question,
           options: cp.options,
-          correctAnswer: 'A', // default placeholder
-          feedbackCorrect: 'Magaling! Tumpak ang sagot.',
-          feedbackIncorrect: 'Maling sagot. Tandaan ang konsepto.'
+          correctAnswer: cp.correctAnswer || 'A',
+          feedbackCorrect: cp.feedbackCorrect || 'Magaling! Tumpak ang sagot.',
+          feedbackIncorrect: cp.feedbackIncorrect || 'Maling sagot. Tandaan ang konsepto.'
         }));
 
         renderCheckpointsList();
@@ -102,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!url) return 'jNQXAC9IVRw';
     const clean = url.trim();
     if (clean.length === 11 && !clean.includes('/') && !clean.includes('?')) return clean;
-    const match = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    const match = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([\w-]{11})/);
     return match ? match[1] : clean;
   }
 

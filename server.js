@@ -82,6 +82,18 @@ app.post('/api/studio/save-lesson', verifyTeacherPin, (req, res) => {
 });
 
 /**
+ * GET /api/admin/lesson
+ * Returns full lesson with answer keys (Teacher only)
+ */
+app.get('/api/admin/lesson', verifyTeacherPin, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  try {
+    lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
+  } catch (e) {}
+  res.json(lessonData);
+});
+
+/**
  * Route: Root redirects to /play.html (Audit Compliant YouTube Runner)
  */
 app.get('/', (req, res) => {
@@ -93,7 +105,8 @@ app.get('/', (req, res) => {
  * Returns sanitized lesson data without answer keys (Anti-tamper)
  */
 app.get('/api/lesson', (req, res) => {
-  // Re-read in case updated by studio
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  // Re-read fresh from disk in case updated by studio
   try {
     lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
   } catch (e) {}
