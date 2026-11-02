@@ -224,7 +224,7 @@ app.post('/api/submissions', async (req, res) => {
     console.error('Database write error:', dbErr.message);
   }
 
-  // 2. Dispatch to Google Sheets Webhook if configured (Awaited with redirect: follow)
+  // 2. Dispatch to Google Sheets Webhook if configured (Audit: Verified check & error handling)
   if (lessonData.sheetWebhookUrl && lessonData.sheetWebhookUrl.startsWith('https://script.google.com')) {
     try {
       const sheetRes = await fetch(lessonData.sheetWebhookUrl, {
@@ -240,10 +240,22 @@ app.post('/api/submissions', async (req, res) => {
         }),
         redirect: 'follow'
       });
-      const sheetJson = await sheetRes.json().catch(() => ({}));
-      console.log('Google Sheet webhook sync success:', sheetJson);
+
+      const responseText = await sheetRes.text();
+      let sheetJson = null;
+      try {
+        sheetJson = JSON.parse(responseText);
+      } catch (parseErr) {
+        console.warn('Google Sheet returned non-JSON (likely sign-in or permission error):', responseText.substring(0, 100));
+      }
+
+      if (sheetJson && sheetJson.ok) {
+        console.log(`✓ Google Sheet sync SUCCESS -> Section: [${sheetJson.section || section}], Sheet: [${sheetJson.connectedTo || 'Default'}]`);
+      } else {
+        console.warn('⚠️ Google Sheet sync failed or rejected:', sheetJson ? sheetJson.error : 'Invalid response');
+      }
     } catch (sheetSyncErr) {
-      console.warn('Google Sheet sync notice:', sheetSyncErr.message);
+      console.warn('Google Sheet network sync error:', sheetSyncErr.message);
     }
   }
 
