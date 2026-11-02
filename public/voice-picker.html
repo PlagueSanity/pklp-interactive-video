@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pumili ng Voice Reader - Ang Tubig na Pinaghahatian</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --primary: #38bdf8;
+      --accent: #facc15;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 680px;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .sample-card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .sample-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .card-tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .sample-card p.desc {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    audio {
+      width: 100%;
+      height: 40px;
+      outline: none;
+      border-radius: 8px;
+    }
+    .banner-note {
+      background: rgba(250, 204, 21, 0.1);
+      border: 1px solid rgba(250, 204, 21, 0.3);
+      color: var(--accent);
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin-top: 20px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎙️ Voice Reader Selector</h1>
+      <p class="subtitle">Pakinggan ang mga halimbawang boses sa ibaba para sa kuwentong <em>"Ang Tubig na Pinaghahatian"</em>. Piliin kung alin ang pinaka-angkop at may tamang puntong Filipino.</p>
+    </header>
+
+    <!-- Voice 1 -->
+    <div class="sample-card">
+      <div class="card-header">
+        <span class="card-title">1. Blessica (Neural Filipino - Babae)</span>
+        <span class="card-tag">Inirerekomenda</span>
+      </div>
+      <p class="desc">Boses ng guro sa radyo/telebisyon. May natural na lambing, tamang intonasyon at diin ng Tagalog/Filipino.</p>
+      <audio controls src="/voice_samples/1_blessica_female_filipino.mp3"></audio>
+    </div>
+
+    <!-- Voice 2 -->
+    <div class="sample-card">
+      <div class="card-header">
+        <span class="card-title">2. Google Tagalog (Google Text-to-Speech)</span>
+        <span class="card-tag">Pamilyar sa Lahat</span>
+      </div>
+      <p class="desc">Ang pamilyar na boses ng Google Translate at Google Assistant sa Pilipinas.</p>
+      <audio controls src="/voice_samples/2_google_tagalog.mp3"></audio>
+    </div>
+
+    <!-- Voice 3 -->
+    <div class="sample-card">
+      <div class="card-header">
+        <span class="card-title">3. Angelo (Neural Filipino - Lalaki)</span>
+        <span class="card-tag">Lalaking Tagapagsalaysay</span>
+      </div>
+      <p class="desc">Mas malalim na boses lalaki na may katamtamang bilis.</p>
+      <audio controls src="/voice_samples/3_angelo_male_conversational.mp3"></audio>
+    </div>
+
+    <!-- Voice 4 -->
+    <div class="sample-card">
+      <div class="card-header">
+        <span class="card-title">4. Rosa (Philippine English / Taglish)</span>
+        <span class="card-tag">Bilingual Accent</span>
+      </div>
+      <p class="desc">May puntong Pilipinong conversational / classroom English.</p>
+      <audio controls src="/voice_samples/4_rosa_philippines.mp3"></audio>
+    </div>
+
+    <div class="banner-note">
+      <strong>💡 O kaya: Puwede rin ang sarili mong boses!</strong><br>
+      Kung nais mo ng 100% tunay na boses ng guro, maaari mo ring basahin at i-record ang maikling kuwento sa iyong cellphone (voice recorder) at ipadala ang audio file para iyon ang ikabit natin sa bidyo.
+    </div>
+  </div>
+</body>
+</html>
