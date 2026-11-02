@@ -10,7 +10,7 @@
   "checkpoints": [
     {
       "id": "cp1",
-      "t": 48,
+      "t": 42,
       "question": "Batay sa panimula ng kuwento, ano ang pangunahing pagkakaiba ng konseptong 'Pakikibaka' at 'Pakikiangkop' bilang tugon sa suliranin?",
       "options": [
         { "id": "A", "text": "Ang pakikibaka ay pagkilos laban sa kawalan ng katarungan, habang ang pakikiangkop ay pagbabago ng paraan upang makaraos." },
@@ -24,7 +24,7 @@
     },
     {
       "id": "cp2",
-      "t": 96,
+      "t": 125,
       "question": "Sa ilalim ng kolonyalismong Espanyol, anong patakaran ang nag-atas ng sapilitang paggawa sa mga kalalakihang Pilipino ayon sa umiiral na tuntunin noon?",
       "options": [
         { "id": "A", "text": "Polo y servicios" },
@@ -34,11 +34,11 @@
       ],
       "correctAnswer": "A",
       "feedbackCorrect": "Magaling! Ang 'Polo y servicios' ay ang sapilitang paglilingkod-paggawa na ipinataw sa mga katutubong sakop sa ilalim ng pamamahala ng Espanya.",
-      "feedbackIncorrect": "Maling sagot. Ang 'Polo y servicios' ang sapilitang paggawa, samantalang ang Tributo ay buwis at ang Encomienda ay ang lupang ipinagkatiwala."
+      "feedbackIncorrect": "Hindi tumpak. Tandaan: Ang 'Polo y servicios' ang sapilitang paggawa, samantalang ang Tributo ay buwis at ang Encomienda ay ang lupang ipinagkatiwala."
     },
     {
       "id": "cp3",
-      "t": 186,
+      "t": 230,
       "question": "Noong 1937, nagtagumpay ang mga 'Sufragista' sa pamamagitan ng plebisito. Ano ang makasaysayang karapatang ipinaglaban at kinilala sa kababaihang Pilipino?",
       "options": [
         { "id": "A", "text": "Karapatang bumoto at makilahok sa halalan (Sufrahiyo)" },
@@ -52,7 +52,7 @@
     },
     {
       "id": "cp4",
-      "t": 227,
+      "t": 278,
       "question": "Sa panahon ng Okupasyong Hapones, bakit naging mahalagang usapin ang 'Soberanya' na ipinaglaban ng mga kilusang gerilya (tulad ng HUKBALAHAP at Hunters-ROTC)?",
       "options": [
         { "id": "A", "text": "Dahil ito ang pinakamataas na kapangyarihang mamahala sa sariling estado nang malaya sa dayuhang kontrol." },

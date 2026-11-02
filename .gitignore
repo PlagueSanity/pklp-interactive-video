@@ -1,7 +1,16 @@
 node_modules/
 .DS_Store
 *.log
+public/*.py
 public/video_assets/*.mp3
 public/video_assets/*.jpg
 public/video_assets/*.mp4
-public/video_assets/concat_list.txt
+public/video_assets/*.gif
+public/video_assets/*.txt
+public/scene*.mp4
+public/scene*.gif
+public/*_demo.*
+public/ang_mga_tinig_ng_nakaraan_final.mp4
+public/voice_samples/
+*.wav
+public/video_assets/*.wav

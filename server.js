@@ -12,6 +12,12 @@ const TEACHER_PIN = process.env.TEACHER_PIN || '1234';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Alias for final video name
+app.get('/ang_mga_tinig_ng_nakaraan_final.mp4', (req, res) => {
+  res.redirect(301, '/ang_mga_tinig_ng_nakaraan.mp4');
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize SQLite database
