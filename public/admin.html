@@ -60,6 +60,20 @@
         </div>
       </div>
 
+      <!-- Section List: the choices students see on the start screen -->
+      <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 18px; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;">
+          <strong style="font-size: 0.95rem;">🏫 Mga Seksiyon na Pagpipilian ng Mag-aaral</strong>
+          <small id="sections-status" style="color: var(--text-muted); font-size: 0.8rem;"></small>
+        </div>
+        <small style="color: var(--text-muted); font-size: 0.8rem;">Ito ang lalabas sa listahan ng seksiyon bago magsimula ang mag-aaral. Hindi nabubura ang mga resulta kapag tinanggal ang isang seksiyon.</small>
+        <div id="sections-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0;"></div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <input type="text" id="input-new-section" placeholder="Halimbawa: 11 - STEM C" maxlength="60" style="flex: 1; min-width: 180px; margin: 0;">
+          <button id="btn-add-section" class="btn" style="width: auto; padding: 8px 16px; font-size: 0.85rem;">➕ Idagdag</button>
+        </div>
+      </div>
+
       <!-- Controls & Filter -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 10px;">

@@ -13,6 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const filterSection = document.getElementById('filter-section');
   const tbody = document.getElementById('submissions-tbody');
 
+  const sectionsList = document.getElementById('sections-list');
+  const inputNewSection = document.getElementById('input-new-section');
+  const btnAddSection = document.getElementById('btn-add-section');
+  const sectionsStatus = document.getElementById('sections-status');
+  let sectionChoices = [];
+
   // Check saved PIN
   if (currentPin) {
     loadDashboard(currentPin);
@@ -75,11 +81,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Render table
         renderTable(allSubmissions);
+
+        loadSections();
       })
       .catch(() => {
         pinError.classList.remove('hidden');
         sessionStorage.removeItem('pklp_teacher_pin');
       });
+  }
+
+  // Section choices for students (editable list)
+  btnAddSection.addEventListener('click', () => {
+    const name = inputNewSection.value.replace(/\s+/g, ' ').trim();
+    if (!name) return;
+    if (sectionChoices.some(s => s.toLowerCase() === name.toLowerCase())) {
+      sectionsStatus.textContent = `Nasa listahan na ang "${name}".`;
+      return;
+    }
+    saveSections([...sectionChoices, name], () => { inputNewSection.value = ''; });
+  });
+
+  inputNewSection.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') btnAddSection.click();
+  });
+
+  function loadSections() {
+    fetch('/api/sections?_t=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => {
+        sectionChoices = data.sections || [];
+        renderSections();
+      })
+      .catch(() => { sectionsStatus.textContent = '⚠️ Hindi ma-load ang mga seksiyon.'; });
+  }
+
+  function saveSections(next, onSaved) {
+    sectionsStatus.textContent = 'Ini-save...';
+    fetch('/api/admin/sections', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-teacher-pin': currentPin },
+      body: JSON.stringify({ sections: next })
+    })
+      .then(r => {
+        if (!r.ok) throw new Error('Save failed');
+        return r.json();
+      })
+      .then(data => {
+        sectionChoices = data.sections;
+        renderSections();
+        sectionsStatus.textContent = '✓ Nai-save';
+        if (onSaved) onSaved();
+      })
+      .catch(() => { sectionsStatus.textContent = '⚠️ Hindi na-save. Pakisubukang muli.'; });
+  }
+
+  function renderSections() {
+    sectionsList.innerHTML = '';
+    if (sectionChoices.length === 0) {
+      sectionsList.innerHTML = '<span style="color: var(--danger); font-size: 0.85rem;">Wala pang seksiyon. Hindi makakapagsimula ang mga mag-aaral hangga\'t walang naidaragdag.</span>';
+      return;
+    }
+    sectionChoices.forEach(sec => {
+      const chip = document.createElement('span');
+      chip.className = 'badge';
+      chip.style.cssText = 'background: #e2e8f0; color: #334155; display: inline-flex; align-items: center; gap: 6px; padding: 6px 6px 6px 12px; font-size: 0.85rem;';
+      chip.textContent = sec;
+
+      const btnRemove = document.createElement('button');
+      btnRemove.type = 'button';
+      btnRemove.textContent = '✕';
+      btnRemove.setAttribute('aria-label', `Tanggalin ang ${sec}`);
+      btnRemove.style.cssText = 'border: none; background: #cbd5e1; color: #334155; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 0.75rem; line-height: 1;';
+      btnRemove.addEventListener('click', () => {
+        if (!confirm(`Tanggalin ang "${sec}" sa listahan ng seksiyon?`)) return;
+        saveSections(sectionChoices.filter(s => s !== sec));
+      });
+
+      chip.appendChild(btnRemove);
+      sectionsList.appendChild(chip);
+    });
   }
 
   function updateSectionFilter(submissions) {

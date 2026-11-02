@@ -523,6 +523,20 @@
       })
       .catch(err => console.error('Error fetching lesson:', err));
 
+    // Section choices come from the teacher's list in the dashboard
+    fetch('/api/sections?_t=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => {
+        studentSectionSelect.innerHTML = '<option value="" disabled selected>Pumili ng seksiyon...</option>';
+        (data.sections || []).forEach(sec => {
+          const opt = document.createElement('option');
+          opt.value = sec;
+          opt.textContent = sec;
+          studentSectionSelect.appendChild(opt);
+        });
+      })
+      .catch(err => console.error('Error fetching sections:', err));
+
     // --- 4. Synchronous Autoplay on Start Button Click ---
     startForm.addEventListener('submit', (e) => {
       e.preventDefault();

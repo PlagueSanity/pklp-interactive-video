@@ -43,6 +43,48 @@ try {
 const lessonPath = path.join(__dirname, 'data', 'lesson.json');
 let lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
 
+// Load Section List (teacher-editable from the dashboard; students pick from it)
+const sectionsPath = path.join(__dirname, 'data', 'sections.json');
+const DEFAULT_SECTIONS = ['11 - STEM A', '11 - STEM B', '11 - HUMSS A', '11 - HUMSS B', '11 - ABM', '11 - TVL'];
+
+function readSections() {
+  try {
+    const list = JSON.parse(fs.readFileSync(sectionsPath, 'utf-8'));
+    if (Array.isArray(list)) return list;
+  } catch (e) {}
+  return DEFAULT_SECTIONS;
+}
+
+/**
+ * GET /api/sections
+ * Returns the section choices shown to students
+ */
+app.get('/api/sections', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.json({ sections: readSections() });
+});
+
+/**
+ * POST /api/admin/sections
+ * Saves the section list typed by the teacher in the dashboard
+ */
+app.post('/api/admin/sections', verifyTeacherPin, (req, res) => {
+  const { sections } = req.body;
+  if (!Array.isArray(sections)) {
+    return res.status(400).json({ error: 'Kailangan ang listahan ng mga seksiyon.' });
+  }
+
+  const clean = [];
+  sections.forEach(s => {
+    if (typeof s !== 'string') return;
+    const name = s.replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (name && !clean.some(c => c.toLowerCase() === name.toLowerCase())) clean.push(name);
+  });
+
+  fs.writeFileSync(sectionsPath, JSON.stringify(clean.slice(0, 100), null, 2), 'utf-8');
+  res.json({ success: true, sections: clean.slice(0, 100) });
+});
+
 /**
  * POST /api/studio/save-lesson
  * Saves lesson configuration from the No-Code Studio
