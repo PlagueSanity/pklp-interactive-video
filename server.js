@@ -30,6 +30,13 @@ db.exec(`
   );
 `);
 
+// Auto-migration: Ensure submission_id column exists if table was created in an earlier version
+try {
+  db.exec(`ALTER TABLE submissions ADD COLUMN submission_id TEXT;`);
+} catch (e) {
+  // Column already exists, safe to ignore
+}
+
 // Load Lesson Data
 const lessonPath = path.join(__dirname, 'data', 'lesson.json');
 let lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
@@ -245,30 +252,42 @@ function verifyTeacherPin(req, res, next) {
  * GET /api/admin/results
  */
 app.get('/api/admin/results', verifyTeacherPin, (req, res) => {
-  const query = db.prepare(`
-    SELECT id, submission_id, student_name, section, score, total_questions, answers_json, created_at
-    FROM submissions
-    WHERE lesson_id = ?
-    ORDER BY id DESC
-  `);
+  try {
+    const query = db.prepare(`
+      SELECT id, student_name, section, score, total_questions, answers_json, created_at
+      FROM submissions
+      WHERE lesson_id = ?
+      ORDER BY id DESC
+    `);
 
-  const rows = query.all(lessonData.id);
-  const totalStudents = rows.length;
-  const avgScore = totalStudents > 0 
-    ? (rows.reduce((sum, r) => sum + r.score, 0) / totalStudents).toFixed(1)
-    : 0;
+    const rows = query.all(lessonData.id);
+    const totalStudents = rows.length;
+    const avgScore = totalStudents > 0 
+      ? (rows.reduce((sum, r) => sum + r.score, 0) / totalStudents).toFixed(1)
+      : 0;
 
-  res.json({
-    lessonTitle: lessonData.title,
-    totalStudents,
-    averageScore: avgScore,
-    totalQuestions: lessonData.checkpoints.length,
-    sheetWebhookUrl: lessonData.sheetWebhookUrl || '',
-    submissions: rows.map(r => ({
-      ...r,
-      answers: JSON.parse(r.answers_json)
-    }))
-  });
+    res.json({
+      lessonTitle: lessonData.title,
+      totalStudents,
+      averageScore: avgScore,
+      totalQuestions: lessonData.checkpoints ? lessonData.checkpoints.length : 3,
+      sheetWebhookUrl: lessonData.sheetWebhookUrl || '',
+      submissions: rows.map(r => ({
+        ...r,
+        answers: JSON.parse(r.answers_json || '{}')
+      }))
+    });
+  } catch (err) {
+    console.error('Admin results query error:', err.message);
+    res.json({
+      lessonTitle: lessonData.title || 'PKLP Lesson',
+      totalStudents: 0,
+      averageScore: 0,
+      totalQuestions: 3,
+      sheetWebhookUrl: '',
+      submissions: []
+    });
+  }
 });
 
 /**
