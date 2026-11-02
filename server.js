@@ -3,6 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const ffmpegPath = require('ffmpeg-static');
 const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
@@ -96,7 +97,7 @@ app.get('/api/admin/lesson', verifyTeacherPin, (req, res) => {
 
 /**
  * POST /api/voice/transform
- * Transforms input audio base64 with character pitch/tone presets or custom pitch/speed
+ * Transforms input audio base64 with character pitch/tone presets directly using ffmpeg-static
  */
 app.post('/api/voice/transform', (req, res) => {
   try {
@@ -115,25 +116,49 @@ app.post('/api/voice/transform', (req, res) => {
     const cleanB64 = audioBase64.replace(/^data:audio\/\w+;base64,/, '');
     fs.writeFileSync(inputPath, Buffer.from(cleanB64, 'base64'));
 
-    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
-    const pyScript = path.join(__dirname, 'transform_audio.py');
+    let filterStr = '';
+    const p = preset || 'old_man';
+    const s = Number(speed) || 1.0;
+    const semi = Number(semitones) || 0;
 
-    const args = [
-      pyScript,
-      inputPath,
-      outputPath,
-      preset || 'old_man',
-      String(semitones || 0),
-      String(speed || 1.0)
+    if (p === 'old_man') {
+      filterStr = 'asetrate=44100*0.78,atempo=1.28,equalizer=f=200:width_type=o:width=1.2:g=5,equalizer=f=3500:width_type=o:width=1:g=-3';
+    } else if (p === 'old_lady') {
+      filterStr = 'asetrate=44100*0.90,atempo=1.11,equalizer=f=350:width_type=o:width=1:g=3,equalizer=f=3000:width_type=o:width=1:g=-2,tremolo=f=4.5:d=0.2';
+    } else if (p === 'boy') {
+      filterStr = 'asetrate=44100*1.25,atempo=0.8,equalizer=f=250:width_type=o:width=1:g=-4,equalizer=f=2400:width_type=o:width=1:g=3';
+    } else if (p === 'narrator') {
+      filterStr = 'equalizer=f=120:width_type=o:width=1:g=4,equalizer=f=4500:width_type=o:width=1:g=3,acompressor=threshold=-18dB:ratio=3:attack=5:release=50';
+    } else {
+      const factor = Math.pow(2, semi / 12);
+      const tempoComp = (1 / factor) * s;
+      const atempoFilters = [];
+      let rem = tempoComp;
+      while (rem > 2.0) { atempoFilters.push('atempo=2.0'); rem /= 2.0; }
+      while (rem < 0.5) { atempoFilters.push('atempo=0.5'); rem /= 0.5; }
+      atempoFilters.push(`atempo=${rem.toFixed(4)}`);
+      filterStr = `asetrate=44100*${factor.toFixed(4)},${atempoFilters.join(',')}`;
+    }
+
+    const ffmpegArgs = [
+      '-y',
+      '-i', inputPath,
+      '-af', filterStr,
+      '-c:a', 'libmp3lame',
+      '-b:a', '192k',
+      outputPath
     ];
 
-    const child = spawn(pythonCmd, args);
+    const child = spawn(ffmpegPath, ffmpegArgs);
+    let stderr = '';
+    child.stderr.on('data', chunk => { stderr += chunk.toString(); });
 
     child.on('close', (code) => {
       try { fs.unlinkSync(inputPath); } catch (e) {}
 
       if (code !== 0 || !fs.existsSync(outputPath)) {
-        return res.status(500).json({ error: 'Nabigo ang pag-transform ng boses.' });
+        console.error('FFmpeg error:', code, stderr);
+        return res.status(500).json({ error: 'Nabigo ang pag-transform ng boses: ' + stderr.slice(-150) });
       }
 
       const outBuffer = fs.readFileSync(outputPath);

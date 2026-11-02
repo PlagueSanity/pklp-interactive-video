@@ -479,12 +479,13 @@
       reader.readAsDataURL(file);
     });
 
-    // Transform API call
+    // Transform API call (Server-side FFmpeg with instant Web Audio fallback)
     btnTransform.addEventListener('click', async () => {
       if (!recordedBase64) return;
       btnTransform.disabled = true;
-      btnTransform.textContent = '⏳ Binabago ang boses gamit ang audio DSP...';
+      btnTransform.textContent = '⏳ Binabago ang boses...';
 
+      let success = false;
       try {
         const res = await fetch('/api/voice/transform', {
           method: 'POST',
@@ -497,21 +498,135 @@
           })
         });
 
-        const data = await res.json();
-        if (data.success && data.audioBase64) {
-          audioTransformed.src = data.audioBase64;
-          btnDownload.href = data.audioBase64;
-          transformedBlock.classList.remove('hidden');
-        } else {
-          alert('Error: ' + (data.error || 'Nabigo ang transformation'));
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.audioBase64) {
+            audioTransformed.src = data.audioBase64;
+            btnDownload.href = data.audioBase64;
+            btnDownload.download = `voice_${currentPreset}.mp3`;
+            transformedBlock.classList.remove('hidden');
+            success = true;
+          }
         }
       } catch (err) {
-        alert('Network error: ' + err.message);
-      } finally {
-        btnTransform.disabled = false;
-        btnTransform.textContent = '⚡ I-transform ang Boses Ngayon';
+        console.warn('Server transform error, falling back to browser audio DSP:', err);
       }
+
+      // If server failed or offline, seamlessly run in-browser Web Audio DSP
+      if (!success) {
+        try {
+          const clientDataUri = await transformInBrowser(
+            recordedBase64,
+            currentPreset,
+            parseFloat(sliderPitch.value),
+            parseFloat(sliderSpeed.value)
+          );
+          audioTransformed.src = clientDataUri;
+          btnDownload.href = clientDataUri;
+          btnDownload.download = `voice_${currentPreset}.wav`;
+          transformedBlock.classList.remove('hidden');
+        } catch (clientErr) {
+          console.error('Client DSP failed:', clientErr);
+          alert('Paumanhin, pakisubukan muling mag-record o mag-upload.');
+        }
+      }
+
+      btnTransform.disabled = false;
+      btnTransform.textContent = '⚡ I-transform ang Boses Ngayon';
     });
+
+    // --- In-Browser Web Audio DSP Fallback (Zero Server Dependencies) ---
+    async function transformInBrowser(dataUri, preset, semitones, speed) {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const res = await fetch(dataUri);
+      const arrayBuffer = await res.arrayBuffer();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+      let semi = semitones;
+      if (preset === 'old_man') semi = -4.5;
+      else if (preset === 'old_lady') semi = -2.0;
+      else if (preset === 'boy') semi = 4.5;
+      else if (preset === 'narrator') semi = 0;
+
+      const factor = Math.pow(2, semi / 12) * (speed || 1.0);
+      const outLength = Math.ceil(audioBuffer.length / factor);
+      const offlineCtx = new OfflineAudioContext(
+        audioBuffer.numberOfChannels,
+        outLength,
+        audioBuffer.sampleRate
+      );
+
+      const src = offlineCtx.createBufferSource();
+      src.buffer = audioBuffer;
+      src.playbackRate.value = factor;
+
+      let lastNode = src;
+      if (preset === 'old_man') {
+        const bass = offlineCtx.createBiquadFilter();
+        bass.type = 'lowshelf';
+        bass.frequency.value = 250;
+        bass.gain.value = 8;
+        lastNode.connect(bass);
+        lastNode = bass;
+      } else if (preset === 'boy') {
+        const treble = offlineCtx.createBiquadFilter();
+        treble.type = 'highshelf';
+        treble.frequency.value = 2400;
+        treble.gain.value = 6;
+        lastNode.connect(treble);
+        lastNode = treble;
+      }
+
+      lastNode.connect(offlineCtx.destination);
+      src.start(0);
+
+      const rendered = await offlineCtx.startRendering();
+      return bufferToWave(rendered, rendered.length);
+    }
+
+    function bufferToWave(abuffer, len) {
+      const numOfChan = abuffer.numberOfChannels;
+      const length = len * numOfChan * 2 + 44;
+      const out = new DataView(new ArrayBuffer(length));
+      const channels = [];
+      let sample = 0;
+      let offset = 0;
+      let pos = 0;
+
+      function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
+      function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
+
+      setUint32(0x46464952); // "RIFF"
+      setUint32(length - 8); // file length - 8
+      setUint32(0x45564157); // "WAVE"
+      setUint32(0x20746d66); // "fmt " chunk
+      setUint32(16);         // length = 16
+      setUint16(1);          // PCM
+      setUint16(numOfChan);
+      setUint32(abuffer.sampleRate);
+      setUint32(abuffer.sampleRate * 2 * numOfChan); // byte rate
+      setUint16(numOfChan * 2); // block align
+      setUint16(16);         // bits per sample
+      setUint32(0x61746164); // "data" chunk
+      setUint32(length - pos - 4);
+
+      for (let i = 0; i < abuffer.numberOfChannels; i++) {
+        channels.push(abuffer.getChannelData(i));
+      }
+
+      while (offset < len) {
+        for (let i = 0; i < numOfChan; i++) {
+          sample = Math.max(-1, Math.min(1, channels[i][offset]));
+          sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+          out.setInt16(pos, sample, true);
+          pos += 2;
+        }
+        offset++;
+      }
+
+      const blob = new Blob([out.buffer], { type: 'audio/wav' });
+      return URL.createObjectURL(blob);
+    }
   </script>
 </body>
 </html>
