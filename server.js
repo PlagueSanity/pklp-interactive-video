@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
@@ -9,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 const TEACHER_PIN = process.env.TEACHER_PIN || '1234';
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize SQLite database
@@ -91,6 +92,63 @@ app.get('/api/admin/lesson', verifyTeacherPin, (req, res) => {
     lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
   } catch (e) {}
   res.json(lessonData);
+});
+
+/**
+ * POST /api/voice/transform
+ * Transforms input audio base64 with character pitch/tone presets or custom pitch/speed
+ */
+app.post('/api/voice/transform', (req, res) => {
+  try {
+    const { audioBase64, preset, semitones, speed } = req.body;
+    if (!audioBase64) {
+      return res.status(400).json({ error: 'Walang audio data na natanggap.' });
+    }
+
+    const tempDir = path.join(__dirname, 'public', 'video_assets');
+    fs.mkdirSync(tempDir, { recursive: true });
+
+    const stamp = Date.now();
+    const inputPath = path.join(tempDir, `temp_rec_${stamp}_in.webm`);
+    const outputPath = path.join(tempDir, `temp_rec_${stamp}_out.mp3`);
+
+    const cleanB64 = audioBase64.replace(/^data:audio\/\w+;base64,/, '');
+    fs.writeFileSync(inputPath, Buffer.from(cleanB64, 'base64'));
+
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    const pyScript = path.join(__dirname, 'transform_audio.py');
+
+    const args = [
+      pyScript,
+      inputPath,
+      outputPath,
+      preset || 'old_man',
+      String(semitones || 0),
+      String(speed || 1.0)
+    ];
+
+    const child = spawn(pythonCmd, args);
+
+    child.on('close', (code) => {
+      try { fs.unlinkSync(inputPath); } catch (e) {}
+
+      if (code !== 0 || !fs.existsSync(outputPath)) {
+        return res.status(500).json({ error: 'Nabigo ang pag-transform ng boses.' });
+      }
+
+      const outBuffer = fs.readFileSync(outputPath);
+      const outB64 = outBuffer.toString('base64');
+      try { fs.unlinkSync(outputPath); } catch (e) {}
+
+      res.json({
+        success: true,
+        audioBase64: `data:audio/mp3;base64,${outB64}`
+      });
+    });
+  } catch (err) {
+    console.error('Error in /api/voice/transform:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /**

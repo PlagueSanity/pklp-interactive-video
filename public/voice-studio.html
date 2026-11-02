@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Changer & Studio Recorder - PKLP</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --accent: #facc15;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: rgba(255,255,255,0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 820px;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 1.6rem;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+    p.subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .card h2 {
+      font-size: 1.15rem;
+      color: var(--accent);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    /* Recorder buttons */
+    .rec-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 0;
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .btn-rec {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--danger);
+      border: none;
+      color: white;
+      font-size: 1.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    .btn-rec:hover { transform: scale(1.05); }
+    .btn-rec.recording {
+      animation: pulse 1.4s infinite;
+      border-radius: 16px;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 18px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .timer {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      font-variant-numeric: tabular-nums;
+    }
+    /* Presets */
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .btn-preset {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .btn-preset:hover {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.1);
+    }
+    .btn-preset.active {
+      border-color: var(--accent);
+      background: rgba(250, 204, 21, 0.15);
+      color: var(--accent);
+    }
+    .btn-preset span.icon { font-size: 1.5rem; }
+    .btn-preset span.sub { font-size: 0.72rem; color: var(--muted); }
+
+    /* Sliders */
+    .slider-group {
+      margin-bottom: 14px;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--primary);
+    }
+    .btn-action {
+      width: 100%;
+      background: var(--primary);
+      color: #0f172a;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s;
+    }
+    .btn-action:hover { background: var(--primary-hover); }
+    .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Audio players */
+    .audio-block {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .audio-block label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    audio { width: 100%; height: 40px; border-radius: 8px; }
+
+    /* Script box */
+    .script-box {
+      background: rgba(0,0,0,0.25);
+      border-radius: 10px;
+      padding: 14px;
+      max-height: 480px;
+      overflow-y: auto;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+    .script-line {
+      margin-bottom: 12px;
+      padding-left: 10px;
+      border-left: 3px solid transparent;
+    }
+    .script-line.tomas { border-left-color: #3b82f6; }
+    .script-line.rosa { border-left-color: #ec4899; }
+    .script-line.pedro { border-left-color: #ef4444; }
+    .script-line.lito { border-left-color: #10b981; }
+    .speaker-tag {
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+    .tomas .speaker-tag { color: #60a5fa; }
+    .rosa .speaker-tag { color: #f472b6; }
+    .pedro .speaker-tag { color: #f87171; }
+    .lito .speaker-tag { color: #34d399; }
+
+    .file-input-wrapper {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .file-input-wrapper input { display: none; }
+    .file-input-wrapper label {
+      color: var(--primary);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎛️ Voice Changer & Studio Recorder</h1>
+      <p class="subtitle">I-record ang iyong boses gamit ang iyong natural na punto (Batangas, Bisaya, Hiligaynon, o Ilocos), at baguhin ang pitch at timbre nito upang maging boses ng <strong>Matandang Lalaki</strong>, <strong>Matandang Babae</strong>, o <strong>Batang Lalaki</strong>!</p>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT COLUMN: RECORDER & CHANGER -->
+      <div class="card">
+        <h2>🎙️ Voice Recorder</h2>
+
+        <div class="rec-box">
+          <button id="btn-record" class="btn-rec" title="Pindutin para mag-record">●</button>
+          <div id="rec-timer" class="timer">00:00</div>
+          <div id="rec-status" style="font-size: 0.85rem; color: var(--muted);">Pindutin ang pulang bilog para magsimula</div>
+        </div>
+
+        <div class="file-input-wrapper">
+          O kaya: <label for="audio-file-upload">Mag-upload ng audio file (.mp3, .m4a, .wav)</label>
+          <input type="file" id="audio-file-upload" accept="audio/*">
+        </div>
+
+        <div id="original-audio-block" class="audio-block hidden">
+          <label>Orihinal na Recording (Iyong Boses):</label>
+          <audio id="audio-original" controls></audio>
+        </div>
+
+        <h2 style="margin-top: 20px;">🎭 Piliin ang Boses ng Tauhan</h2>
+        <div class="presets-grid">
+          <button class="btn-preset active" data-preset="old_man" data-pitch="-4.5" data-speed="0.95">
+            <span class="icon">👴</span>
+            <span>Matandang Lalaki</span>
+            <span class="sub">Mang Tomas / Pedro</span>
+          </button>
+          <button class="btn-preset" data-preset="old_lady" data-pitch="-2" data-speed="0.98">
+            <span class="icon">👵</span>
+            <span>Matandang Babae</span>
+            <span class="sub">Aling Rosa</span>
+          </button>
+          <button class="btn-preset" data-preset="boy" data-pitch="4.5" data-speed="1.05">
+            <span class="icon">👦</span>
+            <span>Batang Lalaki</span>
+            <span class="sub">Lito (15 taon)</span>
+          </button>
+          <button class="btn-preset" data-preset="narrator" data-pitch="0" data-speed="1.0">
+            <span class="icon">🎙️</span>
+            <span>Radio / Studio</span>
+            <span class="sub">Malinaw na Guro</span>
+          </button>
+        </div>
+
+        <!-- Custom Controls -->
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>Taas o Baba ng Boses (Pitch Shift)</span>
+            <span id="pitch-val">-4.5 semitones</span>
+          </div>
+          <input type="range" id="slider-pitch" min="-12" max="12" step="0.5" value="-4.5">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>Bilis ng Pagsasalita (Speed)</span>
+            <span id="speed-val">0.95x</span>
+          </div>
+          <input type="range" id="slider-speed" min="0.6" max="1.5" step="0.05" value="0.95">
+        </div>
+
+        <button id="btn-transform" class="btn-action" disabled>
+          ⚡ I-transform ang Boses Ngayon
+        </button>
+
+        <div id="transformed-audio-block" class="audio-block hidden">
+          <label style="color: var(--accent);">Transformed Character Voice:</label>
+          <audio id="audio-transformed" controls autoplay></audio>
+          <div style="margin-top: 10px; display: flex; gap: 8px;">
+            <a id="btn-download" class="btn-action" style="background: var(--success); text-decoration: none; padding: 10px 14px; font-size: 0.9rem;" download="character_voice.mp3">
+              ⬇ I-download ang MP3
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: SCRIPT GUIDE -->
+      <div class="card">
+        <h2>📜 Script Guide (Basahin habang nagre-record)</h2>
+        <div class="script-box">
+          <p style="margin-bottom: 12px; font-size: 0.85rem; color: var(--muted);">
+            <em>Pumili ng isa sa mga linya sa ibaba, pindutin ang Record, at basahin ito gamit ang iyong sariling punto!</em>
+          </p>
+
+          <div class="script-line tomas">
+            <div class="speaker-tag">👴 Mang Tomas (Malalim, Kalmado):</div>
+            "Kung tataas ang singil, paano naman ang mga magsasakang halos sapat lamang ang kinikita?"
+          </div>
+
+          <div class="script-line rosa">
+            <div class="speaker-tag">👵 Aling Rosa (Mabilis, Nag-aalala):</div>
+            "Tomas, narinig mo na ba ang balita? Tataasan na naman daw ang singil sa tubig!"
+          </div>
+
+          <div class="script-line tomas">
+            <div class="speaker-tag">👴 Mang Tomas (Pagninilay):</div>
+            "Hindi pa natin alam kung magbabago ang patakaran, anak. Pero may natutuhan tayo. Hindi pala kailangang pare-pareho ang ating gawin upang magtulungan."
+          </div>
+
+          <div class="script-line lito">
+            <div class="speaker-tag">👦 Lito (Kabataan, Malikhaing Payo):</div>
+            "Tay, ano pong napagdesisyunan ninyo? Bakit hindi ninyo gawin pareho?"
+          </div>
+
+          <div class="script-line pedro">
+            <div class="speaker-tag">🔥 Mang Pedro (Palaban, Matigas):</div>
+            "Hindi makatarungan ang bagong singil! Dapat tayong maghain ng petisyon at hilinging pag-aralan muli ang patakaran!"
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordStartTime = 0;
+    let timerInterval = null;
+    let recordedBase64 = null;
+    let currentPreset = 'old_man';
+
+    const btnRecord = document.getElementById('btn-record');
+    const recTimer = document.getElementById('rec-timer');
+    const recStatus = document.getElementById('rec-status');
+    const audioOriginal = document.getElementById('audio-original');
+    const originalBlock = document.getElementById('original-audio-block');
+    const audioTransformed = document.getElementById('audio-transformed');
+    const transformedBlock = document.getElementById('transformed-audio-block');
+    const btnTransform = document.getElementById('btn-transform');
+    const btnDownload = document.getElementById('btn-download');
+    const fileUpload = document.getElementById('audio-file-upload');
+    const sliderPitch = document.getElementById('slider-pitch');
+    const sliderSpeed = document.getElementById('slider-speed');
+    const pitchVal = document.getElementById('pitch-val');
+    const speedVal = document.getElementById('speed-val');
+
+    // Preset selection
+    document.querySelectorAll('.btn-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentPreset = btn.dataset.preset;
+        sliderPitch.value = btn.dataset.pitch;
+        sliderSpeed.value = btn.dataset.speed;
+        updateSliderLabels();
+      });
+    });
+
+    sliderPitch.addEventListener('input', () => {
+      currentPreset = 'custom';
+      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+      updateSliderLabels();
+    });
+
+    sliderSpeed.addEventListener('input', () => {
+      currentPreset = 'custom';
+      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+      updateSliderLabels();
+    });
+
+    function updateSliderLabels() {
+      const p = parseFloat(sliderPitch.value);
+      pitchVal.textContent = (p > 0 ? '+' : '') + p + ' semitones';
+      speedVal.textContent = parseFloat(sliderSpeed.value) + 'x';
+    }
+
+    // Recording logic
+    btnRecord.addEventListener('click', async () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        // Stop recording
+        mediaRecorder.stop();
+        btnRecord.classList.remove('recording');
+        btnRecord.textContent = '●';
+        clearInterval(timerInterval);
+        recStatus.textContent = 'Tapos na ang recording!';
+      } else {
+        // Start recording
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = e => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              recordedBase64 = reader.result;
+              audioOriginal.src = recordedBase64;
+              originalBlock.classList.remove('hidden');
+              btnTransform.disabled = false;
+            };
+            reader.readAsDataURL(blob);
+            stream.getTracks().forEach(t => t.stop());
+          };
+
+          mediaRecorder.start();
+          btnRecord.classList.add('recording');
+          btnRecord.textContent = '■';
+          recStatus.textContent = 'Nagre-record... Magsalita nang malinaw';
+          recordStartTime = Date.now();
+          timerInterval = setInterval(() => {
+            const sec = Math.floor((Date.now() - recordStartTime) / 1000);
+            const m = String(Math.floor(sec / 60)).padStart(2, '0');
+            const s = String(sec % 60).padStart(2, '0');
+            recTimer.textContent = `${m}:${s}`;
+          }, 200);
+
+        } catch (err) {
+          alert('Hindi ma-access ang mikropono: ' + err.message);
+        }
+      }
+    });
+
+    // File upload fallback
+    fileUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        recordedBase64 = reader.result;
+        audioOriginal.src = recordedBase64;
+        originalBlock.classList.remove('hidden');
+        btnTransform.disabled = false;
+        recStatus.textContent = 'Na-upload ang: ' + file.name;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Transform API call
+    btnTransform.addEventListener('click', async () => {
+      if (!recordedBase64) return;
+      btnTransform.disabled = true;
+      btnTransform.textContent = '⏳ Binabago ang boses gamit ang audio DSP...';
+
+      try {
+        const res = await fetch('/api/voice/transform', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            audioBase64: recordedBase64,
+            preset: currentPreset,
+            semitones: parseFloat(sliderPitch.value),
+            speed: parseFloat(sliderSpeed.value)
+          })
+        });
+
+        const data = await res.json();
+        if (data.success && data.audioBase64) {
+          audioTransformed.src = data.audioBase64;
+          btnDownload.href = data.audioBase64;
+          transformedBlock.classList.remove('hidden');
+        } else {
+          alert('Error: ' + (data.error || 'Nabigo ang transformation'));
+        }
+      } catch (err) {
+        alert('Network error: ' + err.message);
+      } finally {
+        btnTransform.disabled = false;
+        btnTransform.textContent = '⚡ I-transform ang Boses Ngayon';
+      }
+    });
+  </script>
+</body>
+</html>
