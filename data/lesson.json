@@ -2,12 +2,12 @@
   "id": "pklp-aralin-1",
   "title": "Aralin 1: Pagsusuri sa Tekstong Impormatibo at Deskriptibo",
   "subject": "Pagbasa at Pagsusuri ng Iba't Ibang Teksto Tungo sa Pananaliksik (Grade 11)",
-  "description": "Panoorin ang bidyo at sagutin ang 3 pagsusuri sa bawat checkpoint upang makumpleto ang aralin.",
-  "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+  "description": "Panoorin ang maikling kwento. May 3 tanong na lalabas habang nanonood upang suriin ang iyong pag-unawa.",
+  "videoUrl": "/sample.mp4",
   "checkpoints": [
     {
       "id": "cp1",
-      "timestamp": 4,
+      "timestamp": 3,
       "question": "Batay sa panimula ng bidyo, anong katangian ng Tekstong Impormatibo ang agad na napansin?",
       "options": [
         { "id": "A", "text": "Naglalahad ng mga tiyak at makatotohanang datos nang walang kinikilingan." },
@@ -21,7 +21,7 @@
     },
     {
       "id": "cp2",
-      "timestamp": 8,
+      "timestamp": 6,
       "question": "Nang ilarawan ang pisikal na anyo sa bidyo nang walang halong emosyon, anong uri ng paglalarawan (Tekstong Deskriptibo) ito?",
       "options": [
         { "id": "A", "text": "Subhetibo (May halong damdamin o imahinasyon)" },
@@ -35,7 +35,7 @@
     },
     {
       "id": "cp3",
-      "timestamp": 12,
+      "timestamp": 9,
       "question": "Bakit mahalagang matukoy ng isang mag-aaral sa pananaliksik kung ang teksto ay impormatibo o opinyon lamang?",
       "options": [
         { "id": "A", "text": "Upang matiyak ang kredibilidad at katotohanan ng mga datos sa pananaliksik." },

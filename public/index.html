@@ -22,48 +22,49 @@
       <div class="progress-bar" id="progress-bar"></div>
     </div>
 
-    <!-- 1. Registration Screen -->
-    <section id="registration-section" class="card-content">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <span style="font-size: 2.5rem;">📖</span>
-        <h2 id="reg-lesson-title" style="font-size: 1.25rem; margin-top: 8px;">Aralin 1: Tekstong Impormatibo</h2>
-        <p id="reg-lesson-desc" style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
-          Panoorin ang maikling kwento. May 3 tanong na lalabas habang nanonood.
-        </p>
-      </div>
-
-      <form id="student-form">
-        <div class="form-group">
-          <label for="student-name">Buong Pangalan (Apelyido, Pangalan)</label>
-          <input type="text" id="student-name" placeholder="Halimbawa: Dela Cruz, Juan" required autocomplete="name">
-        </div>
-
-        <div class="form-group">
-          <label for="student-section">Pangkat / Seksiyon</label>
-          <select id="student-section" required>
-            <option value="" disabled selected>Pumili ng seksiyon...</option>
-            <option value="11 - STEM A">11 - STEM A</option>
-            <option value="11 - STEM B">11 - STEM B</option>
-            <option value="11 - HUMSS A">11 - HUMSS A</option>
-            <option value="11 - HUMSS B">11 - HUMSS B</option>
-            <option value="11 - ABM">11 - ABM</option>
-            <option value="11 - TVL">11 - TVL</option>
-          </select>
-        </div>
-
-        <button type="submit" class="btn" style="margin-top: 24px;">Simulan ang Aralin ▶</button>
-      </form>
-    </section>
-
-    <!-- 2. Video Player & Checkpoints Screen -->
-    <section id="player-section" class="hidden">
+    <!-- Video Player Area (ALWAYS VISIBLE SO USER SEES VIDEO RIGHT AWAY) -->
+    <section id="player-container">
       <div class="video-wrapper">
-        <video id="lesson-video" playsinline preload="auto">
-          <source id="video-source" src="" type="video/mp4">
+        <video id="lesson-video" playsinline preload="auto" src="/sample.mp4">
           Hindi suportado ng iyong browser ang HTML5 video.
         </video>
 
-        <!-- Checkpoint Question Overlay -->
+        <!-- Initial "Start Lesson" Overlay (Requires Name & Section) -->
+        <div id="registration-overlay" class="checkpoint-overlay">
+          <div class="checkpoint-box" style="text-align: center;">
+            <span style="font-size: 2.2rem;">📖</span>
+            <h2 id="reg-lesson-title" style="font-size: 1.15rem; margin-top: 6px; color: #fff;">Aralin 1: Pagsusuri sa Tekstong Impormatibo</h2>
+            <p id="reg-lesson-desc" style="color: #cbd5e1; font-size: 0.85rem; margin: 6px 0 16px 0;">
+              Panoorin ang bidyo. May 3 tanong na lalabas habang nanonood.
+            </p>
+
+            <form id="student-form" style="text-align: left;">
+              <div class="form-group">
+                <label for="student-name" style="color: #f1f5f9;">Buong Pangalan (Apelyido, Pangalan)</label>
+                <input type="text" id="student-name" placeholder="Halimbawa: Dela Cruz, Juan" required autocomplete="name">
+              </div>
+
+              <div class="form-group">
+                <label for="student-section" style="color: #f1f5f9;">Pangkat / Seksiyon</label>
+                <select id="student-section" required>
+                  <option value="" disabled selected>Pumili ng seksiyon...</option>
+                  <option value="11 - STEM A">11 - STEM A</option>
+                  <option value="11 - STEM B">11 - STEM B</option>
+                  <option value="11 - HUMSS A">11 - HUMSS A</option>
+                  <option value="11 - HUMSS B">11 - HUMSS B</option>
+                  <option value="11 - ABM">11 - ABM</option>
+                  <option value="11 - TVL">11 - TVL</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn" style="margin-top: 14px; background: #38bdf8; color: #0f172a; font-weight: 700;">
+                SIMULAN ANG BIDYO ▶
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Checkpoint Question Overlay (Appears at timestamps) -->
         <div id="checkpoint-overlay" class="checkpoint-overlay hidden">
           <div class="checkpoint-box">
             <div class="checkpoint-title">
@@ -89,25 +90,25 @@
       </div>
 
       <!-- Player Controls / Info -->
-      <div class="card-content" style="padding: 16px 20px;">
+      <div class="card-content" style="padding: 14px 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <h3 id="now-playing-title" style="font-size: 0.95rem; font-weight: 700;">Nagpe-play...</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted);">Hihinto ang bidyo sa bawat pagsusuri.</p>
+            <h3 id="now-playing-title" style="font-size: 0.95rem; font-weight: 700;">Aralin 1</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Awtomatikong hihinto ang bidyo sa bawat pagsusuri.</p>
           </div>
           <button id="btn-play-pause" style="background: none; border: 1.5px solid var(--border); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
-            ⏸ Pause
+            ▶ Play
           </button>
         </div>
       </div>
 
       <div class="student-tag">
-        <span>Mag-aaral: <strong id="tag-student-name">Juan Dela Cruz</strong></span>
-        <span id="tag-student-section" class="badge" style="background: #e2e8f0; color: #334155;">11 - STEM A</span>
+        <span>Mag-aaral: <strong id="tag-student-name">Hindi pa nagsisimula</strong></span>
+        <span id="tag-student-section" class="badge" style="background: #e2e8f0; color: #334155;">-</span>
       </div>
     </section>
 
-    <!-- 3. Final Completion Screen -->
+    <!-- Final Completion Screen (Replaces Video when done) -->
     <section id="completion-section" class="card-content hidden" style="text-align: center; padding: 32px 20px;">
       <span style="font-size: 3rem;">🎉</span>
       <h2 style="font-size: 1.35rem; margin-top: 10px;">Binabati kita!</h2>
@@ -127,11 +128,7 @@
         </div>
       </div>
 
-      <div id="answers-summary" style="text-align: left; margin-bottom: 24px; font-size: 0.88rem;">
-        <!-- Filled with feedback -->
-      </div>
-
-      <button onclick="location.reload()" class="btn" style="background: #475569;">Bumalik sa Simula</button>
+      <button onclick="location.reload()" class="btn" style="background: #475569;">Ulitin ang Aralin</button>
     </section>
   </div>
 

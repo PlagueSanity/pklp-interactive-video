@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let maxAllowedTime = 0;
 
   // DOM Elements
-  const regSection = document.getElementById('registration-section');
-  const playerSection = document.getElementById('player-section');
+  const regOverlay = document.getElementById('registration-overlay');
+  const playerContainer = document.getElementById('player-container');
   const completionSection = document.getElementById('completion-section');
 
   const studentForm = document.getElementById('student-form');
@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const studentSectionSelect = document.getElementById('student-section');
 
   const video = document.getElementById('lesson-video');
-  const videoSource = document.getElementById('video-source');
   const btnPlayPause = document.getElementById('btn-play-pause');
 
   const checkpointOverlay = document.getElementById('checkpoint-overlay');
@@ -41,7 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('now-playing-title').textContent = lesson.title;
       document.getElementById('checkpoint-badge').textContent = `${lesson.checkpoints.length} Checkpoints`;
 
-      videoSource.src = lesson.videoUrl;
+      // Set video src directly and load
+      video.src = lesson.videoUrl;
       video.load();
     })
     .catch(err => {
@@ -61,16 +61,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('tag-student-name').textContent = name;
     document.getElementById('tag-student-section').textContent = section;
 
-    regSection.classList.add('hidden');
-    playerSection.classList.remove('hidden');
+    // Hide registration overlay and play video
+    regOverlay.classList.add('hidden');
 
-    video.play().catch(() => {
-      btnPlayPause.textContent = '▶ Play';
-    });
+    video.play()
+      .then(() => {
+        btnPlayPause.textContent = '⏸ Pause';
+      })
+      .catch((err) => {
+        console.log('Autoplay prevented, user must tap play:', err);
+        btnPlayPause.textContent = '▶ Play';
+      });
   });
 
   // Play/Pause Button
   btnPlayPause.addEventListener('click', () => {
+    if (!currentStudent.name) {
+      alert('Pakilagay muna ang iyong pangalan at seksiyon.');
+      return;
+    }
+
     if (video.paused) {
       video.play();
       btnPlayPause.textContent = '⏸ Pause';
@@ -122,9 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // When video ends, submit results if not yet submitted
   video.addEventListener('ended', () => {
-    if (Object.keys(studentAnswers).length === lesson.checkpoints.length) {
-      finishLesson();
-    }
+    finishLesson();
   });
 
   // 4. Trigger Checkpoint Overlay
@@ -225,8 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // If all checkpoints answered and video reached near end, finish
     if (answeredCheckpoints.size === lesson.checkpoints.length) {
-      // Let video finish or finish immediately if at end
-      if (video.currentTime >= video.duration - 1) {
+      if (video.currentTime >= video.duration - 0.5) {
         finishLesson();
         return;
       }
@@ -238,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 7. Submit Final Results to Server
   function finishLesson() {
     video.pause();
-    playerSection.classList.add('hidden');
+    playerContainer.classList.add('hidden');
     completionSection.classList.remove('hidden');
 
     fetch('/api/submissions', {
@@ -258,7 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(err => {
       console.error('Error saving submission:', err);
-      alert('Hindi nai-save ang huling marka sa server, ngunit tapos na ang aralin.');
     });
   }
 });
