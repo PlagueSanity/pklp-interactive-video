@@ -3,9 +3,9 @@
   "title": "Aralin: Ang mga Tinig ng Nakaraan (Kasaysayan, Lipunan, at Pakikibaka)",
   "subject": "Baitang 11 - PKLP",
   "description": "Panoorin at suriin ang motion comic na 'Ang mga Tinig ng Nakaraan'. Sagutin ang 4 na interaktibong pagsusuri kaugnay ng mga termino at konseptong pangkasaysayan at panlipunan.",
-  "videoType": "direct",
-  "youtubeId": "",
-  "videoUrl": "/ang_mga_tinig_ng_nakaraan.mp4",
+  "videoType": "youtube",
+  "youtubeId": "ugT6hPATEzU",
+  "videoUrl": "https://youtu.be/ugT6hPATEzU",
   "sheetWebhookUrl": "",
   "checkpoints": [
     {
