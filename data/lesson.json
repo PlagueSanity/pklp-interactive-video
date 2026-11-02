@@ -1,13 +1,16 @@
 {
   "id": "pklp-aralin-1",
   "title": "Aralin 1: Pagsusuri sa Tekstong Impormatibo at Deskriptibo",
-  "subject": "Pagbasa at Pagsusuri ng Iba't Ibang Teksto Tungo sa Pananaliksik (Grade 11)",
-  "description": "Panoorin ang maikling kwento. May 3 tanong na lalabas habang nanonood upang suriin ang iyong pag-unawa.",
+  "subject": "Baitang 11 - PKLP",
+  "description": "Panoorin ang aralin. May 3 pagsusuri na lalabas habang nanonood upang subukin ang iyong pag-unawa.",
+  "videoType": "youtube",
+  "youtubeId": "jNQXAC9IVRw",
   "videoUrl": "/sample.mp4",
+  "sheetWebhookUrl": "",
   "checkpoints": [
     {
       "id": "cp1",
-      "timestamp": 3,
+      "t": 4,
       "question": "Batay sa panimula ng bidyo, anong katangian ng Tekstong Impormatibo ang agad na napansin?",
       "options": [
         { "id": "A", "text": "Naglalahad ng mga tiyak at makatotohanang datos nang walang kinikilingan." },
@@ -16,13 +19,13 @@
         { "id": "D", "text": "Nagkukuwento ng isang kathang-isip na alamat." }
       ],
       "correctAnswer": "A",
-      "feedbackCorrect": "Magaling! Ang Tekstong Impormatibo ay obhetibo at nakabatay sa mga tunay na impormasyon at ebidensya.",
-      "feedbackIncorrect": "Maling sagot. Tandaan: Ang Tekstong Impormatibo ay obhetibo at naglalahad ng totoong impormasyon, hindi kathang-isip o opinyon."
+      "feedbackCorrect": "Magaling! Ang Tekstong Impormatibo ay obhetibo at nakabatay sa mga tunay na impormasyon at datos.",
+      "feedbackIncorrect": "Maling sagot. Tandaan: Ang Tekstong Impormatibo ay obhetibo at naglalahad ng totoong impormasyon nang walang kinikilingan."
     },
     {
       "id": "cp2",
-      "timestamp": 6,
-      "question": "Nang ilarawan ang pisikal na anyo sa bidyo nang walang halong emosyon, anong uri ng paglalarawan (Tekstong Deskriptibo) ito?",
+      "t": 8,
+      "question": "Nang ilarawan ang pisikal na anyo sa paligid nang walang halong emosyon, anong uri ng paglalarawan (Tekstong Deskriptibo) ito?",
       "options": [
         { "id": "A", "text": "Subhetibo (May halong damdamin o imahinasyon)" },
         { "id": "B", "text": "Obhetibo (Nakabatay sa totoong pisikal na anyo)" },
@@ -31,11 +34,11 @@
       ],
       "correctAnswer": "B",
       "feedbackCorrect": "Tumpak! Ang 'Obhetibong Paglalarawan' ay nakabatay sa totoong anyo at katotohanan nang walang pinapanigan.",
-      "feedbackIncorrect": "Hindi tumpak. Kapag ang paglalarawan ay walang halong personal na damdamin, ito ay 'Obhetibo'."
+      "feedbackIncorrect": "Hindi tumpak. Kapag ang paglalarawan ay walang halong personal na damdamin, ito ay tinatawag na 'Obhetibo'."
     },
     {
       "id": "cp3",
-      "timestamp": 9,
+      "t": 13,
       "question": "Bakit mahalagang matukoy ng isang mag-aaral sa pananaliksik kung ang teksto ay impormatibo o opinyon lamang?",
       "options": [
         { "id": "A", "text": "Upang matiyak ang kredibilidad at katotohanan ng mga datos sa pananaliksik." },

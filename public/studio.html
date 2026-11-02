@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guro Studio - Lumikha ng Interactive Video</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 16px;
+    }
+    .studio-container {
+      max-width: 1080px;
+      margin: 0 auto;
+      background: #1e293b;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .studio-header {
+      background: #090d16;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+    }
+    .studio-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+      padding: 20px;
+    }
+    @media (max-width: 860px) {
+      .studio-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .section-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    label {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: #38bdf8;
+      outline: none;
+    }
+    .video-preview-box {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    #studio-yt-player {
+      width: 100%;
+      height: 100%;
+    }
+    .timeline-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1e293b;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+    }
+    .cp-item {
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cp-item strong {
+      color: #38bdf8;
+    }
+    .btn-small {
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-delete {
+      background: #dc2626;
+      color: #fff;
+    }
+    .choice-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .choice-row input[type="radio"] {
+      width: auto;
+      margin-bottom: 0;
+      cursor: pointer;
+    }
+    .choice-row input[type="text"] {
+      margin-bottom: 0;
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PIN Modal -->
+  <div id="pin-modal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); display: flex; align-items: center; justify-content: center; z-index: 100;">
+    <div style="background: #1e293b; border: 1px solid #334155; padding: 24px; border-radius: 12px; width: 100%; max-width: 360px;">
+      <h3 style="font-size: 1.15rem; margin-bottom: 6px; color: #fff;">🔒 Guro Studio Login</h3>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 16px;">
+        Ilagay ang iyong Teacher PIN (Default: <code>1234</code>) upang makagawa ng aralin.
+      </p>
+      <input type="password" id="input-pin" placeholder="Ilagay ang PIN..." autofocus>
+      <button id="btn-unlock" class="btn" style="margin-top: 8px;">Buksan ang Studio</button>
+      <p id="pin-error" style="color: #f87171; font-size: 0.8rem; margin-top: 8px;" class="hidden">
+        Maling PIN. Pakisubukang muli.
+      </p>
+    </div>
+  </div>
+
+  <div class="studio-container hidden" id="studio-main">
+    <!-- Header -->
+    <header class="studio-header">
+      <div>
+        <h1 style="font-size: 1.15rem; color: #fff;">🎬 Guro Studio: No-Code Interactive Video Creator</h1>
+        <small style="color: #94a3b8;">Gumawa at mag-edit ng mga interactive na aralin nang walang coding</small>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <a href="/admin.html" class="btn-small" style="background: #334155; color: #fff; padding: 8px 14px; text-decoration: none; font-weight: 600;">📊 Dashboard</a>
+        <a href="/play.html" target="_blank" class="btn-small" style="background: #38bdf8; color: #0f172a; padding: 8px 14px; text-decoration: none; font-weight: 700;">▶ Buksan ang Player</a>
+      </div>
+    </header>
+
+    <div class="studio-grid">
+      <!-- Left Column: Video Preview & Lesson Settings -->
+      <div>
+        <div class="section-box">
+          <div class="section-title"><span>⚙️</span> 1. Impormasyon ng Aralin</div>
+          <label>Pamagat ng Aralin:</label>
+          <input type="text" id="lesson-title" placeholder="Aralin 1: Pagsusuri sa Tekstong Impormatibo">
+
+          <label>Asignatura at Baitang:</label>
+          <input type="text" id="lesson-subject" placeholder="Baitang 11 - PKLP">
+
+          <label>YouTube Video Link o Video ID:</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="lesson-youtube-url" placeholder="https://www.youtube.com/watch?v=jNQXAC9IVRw o jNQXAC9IVRw">
+            <button id="btn-load-video" class="btn-small" style="background: #38bdf8; color: #0f172a; font-weight: 700; height: 42px; width: 100px;">I-load</button>
+          </div>
+
+          <label>Google Sheet Webhook URL (Opsyonal para sa Direct Sync):</label>
+          <input type="text" id="lesson-sheet-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+          <small style="color: #94a3b8; font-size: 0.75rem;">Kapag may webhook, awtomatikong papasok ang bawat score sa iyong Google Sheet sa Google Drive.</small>
+        </div>
+
+        <!-- Video Player Preview -->
+        <div class="section-box">
+          <div class="section-title"><span>📺</span> 2. Video Timeline at Scrubber</div>
+          <div class="video-preview-box">
+            <div id="studio-yt-player"></div>
+          </div>
+
+          <div class="timeline-bar">
+            <div>
+              <span style="font-size: 0.85rem; color: #94a3b8;">Kasalukuyang Oras:</span>
+              <strong id="display-current-time" style="font-size: 1.1rem; color: #38bdf8; margin-left: 6px;">00:00</strong>
+            </div>
+            <button id="btn-capture-time" class="btn-small" style="background: #16a34a; color: #fff; font-weight: 700; padding: 8px 14px;">
+              ➕ Magdagdag ng Tanong Dito
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Checkpoint Question Builder & Checkpoints List -->
+      <div>
+        <div class="section-box" id="builder-box">
+          <div class="section-title"><span>✍️</span> 3. Tagabuo ng Katanungan (Question Builder)</div>
+          
+          <label>Oras kung kailan hihinto ang bidyo (segundo):</label>
+          <input type="number" id="cp-timestamp" placeholder="Halimbawa: 45" min="0">
+
+          <label>Katanungan:</label>
+          <textarea id="cp-question" rows="3" placeholder="Ilagay ang katanungan para sa mga mag-aaral..."></textarea>
+
+          <label>Mga Pagpipilian (Piliin ang radio button ng TAMANG sagot):</label>
+          <div class="choice-row">
+            <input type="radio" name="correct-choice" value="A" id="rad-A" checked>
+            <input type="text" id="choice-A" placeholder="Pagpipilian A (Tamang sagot)">
+          </div>
+          <div class="choice-row">
+            <input type="radio" name="correct-choice" value="B" id="rad-B">
+            <input type="text" id="choice-B" placeholder="Pagpipilian B">
+          </div>
+          <div class="choice-row">
+            <input type="radio" name="correct-choice" value="C" id="rad-C">
+            <input type="text" id="choice-C" placeholder="Pagpipilian C">
+          </div>
+          <div class="choice-row">
+            <input type="radio" name="correct-choice" value="D" id="rad-D">
+            <input type="text" id="choice-D" placeholder="Pagpipilian D">
+          </div>
+
+          <label style="margin-top: 10px;">Paliwanag / Feedback kapag TAMA ang sagot:</label>
+          <input type="text" id="cp-feedback-correct" placeholder="Magaling! Tumpak ang iyong sagot...">
+
+          <label>Paliwanag / Feedback kapag MALI ang sagot:</label>
+          <input type="text" id="cp-feedback-wrong" placeholder="Maling sagot. Tandaan na ang konseptong ito ay...">
+
+          <button id="btn-save-checkpoint" class="btn" style="background: #2563eb; margin-top: 8px;">
+            💾 I-save ang Checkpoint na Ito
+          </button>
+        </div>
+
+        <!-- Checkpoints List -->
+        <div class="section-box">
+          <div class="section-title"><span>📋</span> 4. Talaan ng mga Naka-set na Checkpoints (<span id="cp-count">0</span>)</div>
+          <div id="checkpoints-list">
+            <p style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 14px;">
+              Wala pang checkpoints. Magpatugtog ng video at i-click ang "+ Magdagdag ng Tanong Dito".
+            </p>
+          </div>
+        </div>
+
+        <!-- Big 1-Click Publish Button -->
+        <button id="btn-publish-all" class="btn" style="background: #16a34a; font-size: 1.1rem; padding: 16px; font-weight: 800;">
+          🚀 I-SAVE AT I-PUBLISH ANG BUONG ARALIN
+        </button>
+        <div id="publish-success-box" class="hidden" style="background: rgba(22, 163, 74, 0.2); border: 1px solid #16a34a; padding: 14px; border-radius: 8px; margin-top: 12px; text-align: center;">
+          <strong style="color: #4ade80;">✓ Matagumpay na nai-publish ang aralin!</strong><br>
+          <p style="font-size: 0.85rem; margin: 6px 0;">Maaari mo nang kopyahin ang link at i-share sa mga estudyante:</p>
+          <input type="text" id="shareable-student-link" readonly style="text-align: center; font-weight: 700; color: #38bdf8;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="studio.js"></script>
+</body>
+</html>

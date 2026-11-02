@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+  <title>PKLP Interactive Video Lesson (Grade 11)</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Messenger / FB in-app browser alert */
+    .inapp-banner {
+      background: #f59e0b;
+      color: #78350f;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    /* Stage Container (Audit compliant: Grid, dvh units, no position: fixed) */
+    .stage {
+      width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: #000;
+    }
+
+    /* Landscape Mode: Split screen (Video 3fr : Question 2fr) */
+    @media (orientation: landscape) and (max-height: 550px) {
+      .stage {
+        grid-template-columns: 3fr 2fr;
+        grid-template-rows: 1fr;
+      }
+    }
+
+    /* Video Player Area */
+    .player-container {
+      position: relative;
+      width: 100%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      aspect-ratio: 16 / 9;
+    }
+
+    @media (orientation: landscape) and (max-height: 550px) {
+      .player-container {
+        height: 100%;
+        aspect-ratio: auto;
+      }
+    }
+
+    #yt-player {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Question Panel (Below player in portrait, Beside player in landscape. NEVER covering iframe) */
+    .question-panel {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 16px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    @media (orientation: landscape) and (max-height: 550px) {
+      .question-panel {
+        border-top: none;
+        border-left: 1px solid var(--border);
+        height: 100%;
+      }
+    }
+
+    .cp-header {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #38bdf8;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .question-title {
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    /* 48px Touch Targets for mobile phones */
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .opt-btn {
+      min-height: 48px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: #f1f5f9;
+      font-size: 0.92rem;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      transition: all 0.15s ease;
+    }
+
+    .opt-btn:active, .opt-btn.selected {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: #38bdf8;
+    }
+
+    .opt-btn:disabled {
+      cursor: default;
+      opacity: 0.8;
+    }
+
+    .btn-action {
+      min-height: 48px;
+      width: 100%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 12px;
+    }
+
+    .btn-action:disabled {
+      background: #475569;
+      cursor: not-allowed;
+    }
+
+    .feedback-box {
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .feedback-correct {
+      background: rgba(22, 163, 74, 0.2);
+      border: 1px solid var(--success);
+      color: #4ade80;
+    }
+
+    .feedback-wrong {
+      background: rgba(220, 38, 38, 0.2);
+      border: 1px solid var(--danger);
+      color: #f87171;
+    }
+
+    /* Name Entry Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.95);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 440px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+
+    input, select {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px 14px;
+      background: #0f172a;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: #38bdf8;
+    }
+
+    /* Fallback Play Button */
+    .fallback-play {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- In-app Browser Notice for Messenger/FB -->
+  <div id="inapp-banner" class="inapp-banner hidden">
+    ℹ️ Tip: Pindutin ang <strong>(...)</strong> sa kanang itaas at piliin ang <strong>"Open in Chrome"</strong> para sa pinakamagandang karanasan.
+  </div>
+
+  <!-- Name Entry Screen -->
+  <div id="name-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div style="text-align: center; margin-bottom: 16px;">
+        <span style="font-size: 2.2rem;">📖</span>
+        <h2 id="modal-lesson-title" style="font-size: 1.15rem; margin-top: 6px;">Aralin sa PKLP (Baitang 11)</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+          Panoorin ang aralin at sagutin ang mga katanungan sa bawat checkpoint.
+        </p>
+      </div>
+
+      <form id="start-form">
+        <div class="form-group">
+          <label for="student-name">Buong Pangalan (Apelyido, Pangalan):</label>
+          <input type="text" id="student-name" placeholder="Halimbawa: Dela Cruz, Juan" required autocomplete="name">
+        </div>
+
+        <div class="form-group">
+          <label for="student-section">Pangkat / Seksiyon:</label>
+          <select id="student-section" required>
+            <option value="" disabled selected>Pumili ng seksiyon...</option>
+            <option value="11 - STEM A">11 - STEM A</option>
+            <option value="11 - STEM B">11 - STEM B</option>
+            <option value="11 - HUMSS A">11 - HUMSS A</option>
+            <option value="11 - HUMSS B">11 - HUMSS B</option>
+            <option value="11 - ABM">11 - ABM</option>
+            <option value="11 - TVL">11 - TVL</option>
+          </select>
+        </div>
+
+        <button type="submit" id="btn-start" class="btn-action" style="margin-top: 10px;">
+          Simulan ang Aralin ▶
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Stage: Grid layout holding Player and Question Panel (Split Screen compliant) -->
+  <main class="stage" id="main-stage">
+    
+    <!-- Player Container -->
+    <div class="player-container">
+      <div id="yt-player"></div>
+
+      <!-- Fallback button if Android blocks autoplay -->
+      <div id="fallback-play" class="fallback-play hidden">
+        <button id="btn-manual-play" class="btn-action" style="width: auto; padding: 12px 24px;">
+          ▶ Pindutin para Magsimula
+        </button>
+      </div>
+    </div>
+
+    <!-- Question Panel (Beside in landscape, Below in portrait) -->
+    <div class="question-panel" id="question-panel">
+      <!-- Waiting state while video is playing -->
+      <div id="state-watching" style="text-align: center; margin: auto 0; padding: 20px;">
+        <span style="font-size: 2rem;">📺</span>
+        <h3 style="font-size: 1rem; margin-top: 8px;">Kasalukuyang Nanonood...</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+          Hihinto ang bidyo sa bawat pagsusuri. Huwag laktawan ang aralin.
+        </p>
+        <button id="btn-fullscreen" style="margin-top: 16px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); color: #fff; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+          ⛶ Buong Screen (Fullscreen)
+        </button>
+      </div>
+
+      <!-- Active Checkpoint Question State -->
+      <div id="state-question" class="hidden">
+        <div class="cp-header" id="cp-badge">Pagsusuri 1 ng 3</div>
+        <div class="question-title" id="cp-text">Naglo-load ang katanungan...</div>
+
+        <div class="options-grid" id="options-container">
+          <!-- Dynamically populated buttons -->
+        </div>
+
+        <div id="cp-feedback-box" class="feedback-box hidden"></div>
+
+        <button id="btn-submit-answer" class="btn-action" disabled>Ipasa ang Sagot</button>
+        <button id="btn-continue-video" class="btn-action hidden" style="background: var(--success);">Magpatuloy sa Aralin ▶</button>
+      </div>
+
+      <!-- Completion State -->
+      <div id="state-completed" class="hidden" style="text-align: center; margin: auto 0;">
+        <span style="font-size: 2.5rem;">🎉</span>
+        <h3 style="font-size: 1.15rem; margin-top: 8px;">Natapos Mo ang Aralin!</h3>
+        <div style="font-size: 2.4rem; font-weight: 800; color: #38bdf8; margin: 8px 0;" id="final-score-display">0 / 3</div>
+        <p id="sync-status" style="font-size: 0.85rem; color: #4ade80; font-weight: 600;">
+          Inirerehistro ang iyong iskor...
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    // --- 1. Audit Check: Detect Messenger / Facebook In-app Browser ---
+    const ua = navigator.userAgent || '';
+    if (ua.includes('FBAN') || ua.includes('FBAV') || ua.includes('Messenger')) {
+      document.getElementById('inapp-banner').classList.remove('hidden');
+    }
+
+    // --- State Variables ---
+    let lessonData = null;
+    let checkpoints = [];
+    let player = null;
+    let playerReady = false;
+    let pollInterval = null;
+    let maxWatched = 0;
+    let currentStudent = { name: '', section: '' };
+    let studentAnswers = {};
+    let activeCheckpoint = null;
+    let submissionId = 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7);
+
+    // DOM Elements
+    const nameModal = document.getElementById('name-modal');
+    const startForm = document.getElementById('start-form');
+    const studentNameInput = document.getElementById('student-name');
+    const studentSectionSelect = document.getElementById('student-section');
+
+    const stateWatching = document.getElementById('state-watching');
+    const stateQuestion = document.getElementById('state-question');
+    const stateCompleted = document.getElementById('state-completed');
+
+    const cpBadge = document.getElementById('cp-badge');
+    const cpText = document.getElementById('cp-text');
+    const optionsContainer = document.getElementById('options-container');
+    const cpFeedbackBox = document.getElementById('cp-feedback-box');
+    const btnSubmitAnswer = document.getElementById('btn-submit-answer');
+    const btnContinueVideo = document.getElementById('btn-continue-video');
+    const fallbackPlay = document.getElementById('fallback-play');
+    const btnManualPlay = document.getElementById('btn-manual-play');
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+
+    // --- 2. Fetch Sanitized Lesson Data ---
+    fetch('/api/lesson')
+      .then(r => r.json())
+      .then(data => {
+        lessonData = data;
+        document.getElementById('modal-lesson-title').textContent = lessonData.title;
+        // Map checkpoints with `t` property as audited
+        checkpoints = lessonData.checkpoints.map(cp => ({
+          ...cp,
+          t: cp.timestamp || cp.t,
+          done: false
+        }));
+      })
+      .catch(err => console.error('Error fetching lesson:', err));
+
+    // --- 3. YouTube Player Initialization (Audit: Preloaded during name entry) ---
+    function onYouTubeIframeAPIReady() {
+      // Default to jNQXAC9IVRw (19s demo) or lesson YouTube ID
+      const ytId = (lessonData && lessonData.youtubeId) ? lessonData.youtubeId : 'jNQXAC9IVRw';
+      
+      player = new YT.Player('yt-player', {
+        videoId: ytId,
+        playerVars: {
+          controls: 0,        // Hide scrub bar
+          disablekb: 1,       // Disable keyboard seeking
+          fs: 0,              // Disable native YT fullscreen (avoids hiding questions)
+          modestbranding: 1,
+          rel: 0,
+          playsinline: 1
+        },
+        events: {
+          onReady: () => {
+            playerReady = true;
+          },
+          onStateChange: onPlayerStateChange
+        }
+      });
+    }
+
+    // --- 4. Synchronous Autoplay on Start Button Click (Audit rule) ---
+    startForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = studentNameInput.value.trim();
+      const section = studentSectionSelect.value;
+      if (!name || !section) return;
+
+      currentStudent = { name, section };
+
+      // Immediately hide modal
+      nameModal.classList.add('hidden');
+
+      // CRITICAL AUDIT RULE: Trigger playVideo() directly in the user click handler
+      // Do NOT await any fetch first!
+      if (player && player.playVideo) {
+        player.playVideo();
+      }
+
+      // Fallback: If not playing within 2s, show manual play button
+      setTimeout(() => {
+        if (!player || player.getPlayerState() !== YT.PlayerState.PLAYING) {
+          fallbackPlay.classList.remove('hidden');
+        }
+      }, 2000);
+    });
+
+    btnManualPlay.addEventListener('click', () => {
+      fallbackPlay.classList.add('hidden');
+      if (player && player.playVideo) player.playVideo();
+    });
+
+    // --- 5. 200ms Polling Loop & Seek-Locking (Audit: Section 1) ---
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.PLAYING) {
+        fallbackPlay.classList.add('hidden');
+        if (!pollInterval) {
+          pollInterval = setInterval(pollPlaybackTime, 200);
+        }
+      } else {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      }
+
+      // Check if video ended
+      if (event.data === YT.PlayerState.ENDED) {
+        finishLesson();
+      }
+    }
+
+    function pollPlaybackTime() {
+      if (!player || typeof player.getCurrentTime !== 'function') return;
+      if (player.getPlayerState() !== YT.PlayerState.PLAYING) return;
+
+      const t = player.getCurrentTime();
+      const next = checkpoints.find(c => !c.done);
+      const limit = next ? next.t : Infinity;
+
+      // Jumped ahead -> snap back immediately (blocks seeking past unseen checkpoints)
+      if (t > Math.min(maxWatched + 2, limit + 0.5)) {
+        player.seekTo(Math.min(maxWatched, limit), true);
+        return;
+      }
+
+      maxWatched = Math.max(maxWatched, Math.min(t, limit));
+
+      // Trigger earliest unanswered checkpoint
+      if (next && t >= next.t - 0.25) {
+        player.pauseVideo();
+        showQuestion(next);
+      }
+    }
+
+    // --- 6. Display Question (Beside or below, never covering iframe) ---
+    function showQuestion(cp) {
+      activeCheckpoint = cp;
+      stateWatching.classList.add('hidden');
+      stateQuestion.classList.remove('hidden');
+
+      const idx = checkpoints.findIndex(c => c.id === cp.id) + 1;
+      cpBadge.textContent = `Pagsusuri ${idx} ng ${checkpoints.length}`;
+      cpText.textContent = cp.question;
+
+      // Populate options as large 48px touch buttons
+      optionsContainer.innerHTML = '';
+      cp.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.innerHTML = `<strong>${opt.id}.</strong>&nbsp; ${opt.text}`;
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          btn.dataset.selected = 'true';
+          btnSubmitAnswer.disabled = false;
+        });
+        optionsContainer.appendChild(btn);
+      });
+
+      // Reset feedback and action buttons
+      cpFeedbackBox.className = 'feedback-box hidden';
+      btnSubmitAnswer.classList.remove('hidden');
+      btnSubmitAnswer.disabled = true;
+      btnContinueVideo.classList.add('hidden');
+    }
+
+    // --- 7. Answer Verification (Server-side validation) ---
+    btnSubmitAnswer.addEventListener('click', () => {
+      const selectedBtn = document.querySelector('.opt-btn.selected');
+      if (!selectedBtn || !activeCheckpoint) return;
+
+      const choiceId = selectedBtn.innerText.trim().charAt(0); // 'A', 'B', 'C', 'D'
+      btnSubmitAnswer.disabled = true;
+      btnSubmitAnswer.textContent = 'Sinusuri...';
+
+      fetch('/api/checkpoints/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          checkpointId: activeCheckpoint.id,
+          selectedOption: choiceId
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        studentAnswers[activeCheckpoint.id] = choiceId;
+        activeCheckpoint.done = true;
+
+        // Display formative feedback
+        cpFeedbackBox.classList.remove('hidden');
+        if (res.isCorrect) {
+          cpFeedbackBox.className = 'feedback-box feedback-correct';
+          cpFeedbackBox.innerHTML = `<strong>✓ Tumpak!</strong><br>${res.feedback}`;
+        } else {
+          cpFeedbackBox.className = 'feedback-box feedback-wrong';
+          cpFeedbackBox.innerHTML = `<strong>✗ Maling Sagot.</strong><br>${res.feedback}`;
+        }
+
+        // Lock options
+        document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+
+        btnSubmitAnswer.classList.add('hidden');
+        btnContinueVideo.classList.remove('hidden');
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Nagka-error sa pagsusuri. Pakisubukang muli.');
+        btnSubmitAnswer.disabled = false;
+        btnSubmitAnswer.textContent = 'Ipasa ang Sagot';
+      });
+    });
+
+    // Continue Video
+    btnContinueVideo.addEventListener('click', () => {
+      stateQuestion.classList.add('hidden');
+      stateWatching.classList.remove('hidden');
+
+      // Advance clock slightly past checkpoint
+      if (player && typeof player.seekTo === 'function') {
+        const nextTime = activeCheckpoint.t + 0.3;
+        maxWatched = Math.max(maxWatched, nextTime);
+        player.seekTo(nextTime, true);
+        player.playVideo();
+      }
+      activeCheckpoint = null;
+    });
+
+    // --- 8. Custom Fullscreen Container (Audit: requestFullscreen on stage) ---
+    btnFullscreen.addEventListener('click', () => {
+      const stage = document.getElementById('main-stage');
+      if (!document.fullscreenElement) {
+        if (stage.requestFullscreen) {
+          stage.requestFullscreen();
+        } else if (stage.webkitRequestFullscreen) {
+          stage.webkitRequestFullscreen();
+        }
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    });
+
+    // --- 9. Offline-Resilient Results Sync (Audit Section 3) ---
+    function finishLesson() {
+      stateWatching.classList.add('hidden');
+      stateQuestion.classList.add('hidden');
+      stateCompleted.classList.remove('hidden');
+
+      const payload = {
+        submissionId: submissionId,
+        studentName: currentStudent.name,
+        section: currentStudent.section,
+        answers: studentAnswers,
+        timestamp: new Date().toISOString()
+      };
+
+      // 1. Save to phone's localStorage first (safety cache against Piso WiFi drops)
+      localStorage.setItem('pklp_pending_' + submissionId, JSON.stringify(payload));
+
+      // 2. Dispatch submission to server (with retry loop)
+      submitWithRetry(payload, 0);
+    }
+
+    function submitWithRetry(payload, attempt) {
+      const syncStatus = document.getElementById('sync-status');
+      syncStatus.textContent = 'Ipinapadala ang marka sa guro...';
+      syncStatus.style.color = '#38bdf8';
+
+      fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('final-score-display').textContent = `${data.score} / ${data.total}`;
+        
+        // Remove from pending localStorage once verified
+        localStorage.removeItem('pklp_pending_' + payload.submissionId);
+
+        syncStatus.textContent = '✓ Naipadala na sa talaan ng guro!';
+        syncStatus.style.color = '#4ade80';
+      })
+      .catch(err => {
+        console.warn(`Submission attempt ${attempt + 1} failed:`, err);
+        // Exponential backoff: 2s, 4s, 8s (max 3 retries)
+        if (attempt < 3) {
+          const delay = Math.pow(2, attempt + 1) * 1000 + Math.random() * 500;
+          setTimeout(() => submitWithRetry(payload, attempt + 1), delay);
+        } else {
+          syncStatus.textContent = '⚠️ Mahina ang koneksyon. Nakatago ang iyong marka sa cellphone at awtomatikong ipapadala kapag nagka-signal muli.';
+          syncStatus.style.color = '#f59e0b';
+        }
+      });
+    }
+
+    // Auto-retry pending submissions when device comes online
+    window.addEventListener('online', () => {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('pklp_pending_')) {
+          const pending = JSON.parse(localStorage.getItem(key));
+          if (pending) submitWithRetry(pending, 0);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

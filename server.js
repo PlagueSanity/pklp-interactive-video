@@ -19,6 +19,7 @@ const db = new DatabaseSync(dbPath);
 db.exec(`
   CREATE TABLE IF NOT EXISTS submissions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    submission_id TEXT UNIQUE,
     lesson_id TEXT NOT NULL,
     student_name TEXT NOT NULL,
     section TEXT NOT NULL,
@@ -34,13 +35,66 @@ const lessonPath = path.join(__dirname, 'data', 'lesson.json');
 let lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
 
 /**
+ * POST /api/studio/save-lesson
+ * Saves lesson configuration from the No-Code Studio
+ */
+app.post('/api/studio/save-lesson', verifyTeacherPin, (req, res) => {
+  const { title, subject, description, videoType, youtubeId, sheetWebhookUrl, checkpoints } = req.body;
+
+  if (!title || !youtubeId || !checkpoints || !checkpoints.length) {
+    return res.status(400).json({ error: 'Pamagat, YouTube ID, at hindi bababa sa isang checkpoint ang kinakailangan.' });
+  }
+
+  const updatedLesson = {
+    id: lessonData.id || 'pklp-aralin-1',
+    title: title.trim(),
+    subject: (subject || 'Baitang 11 - PKLP').trim(),
+    description: (description || 'Panoorin ang aralin at sagutin ang mga katanungan.').trim(),
+    videoType: videoType || 'youtube',
+    youtubeId: youtubeId.trim(),
+    sheetWebhookUrl: (sheetWebhookUrl || '').trim(),
+    checkpoints: checkpoints.map((cp, idx) => ({
+      id: cp.id || `cp${idx + 1}`,
+      t: Number(cp.t || cp.timestamp || 0),
+      question: cp.question.trim(),
+      options: cp.options,
+      correctAnswer: cp.correctAnswer,
+      feedbackCorrect: cp.feedbackCorrect || 'Magaling! Tumpak ang iyong sagot.',
+      feedbackIncorrect: cp.feedbackIncorrect || 'Maling sagot. Pakisuri muli ang konsepto sa aralin.'
+    }))
+  };
+
+  fs.writeFileSync(lessonPath, JSON.stringify(updatedLesson, null, 2), 'utf-8');
+  lessonData = updatedLesson;
+
+  res.json({
+    success: true,
+    message: 'Matagumpay na na-save ang aralin!',
+    lesson: updatedLesson
+  });
+});
+
+/**
+ * Route: Root redirects to /play.html (Audit Compliant YouTube Runner)
+ */
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'play.html'));
+});
+
+/**
  * GET /api/lesson
- * Returns sanitized lesson data to students (stripping correct answers to prevent devtools inspection)
+ * Returns sanitized lesson data without answer keys (Anti-tamper)
  */
 app.get('/api/lesson', (req, res) => {
+  // Re-read in case updated by studio
+  try {
+    lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
+  } catch (e) {}
+
   const sanitizedCheckpoints = lessonData.checkpoints.map(cp => ({
     id: cp.id,
-    timestamp: cp.timestamp,
+    timestamp: cp.t || cp.timestamp,
+    t: cp.t || cp.timestamp,
     question: cp.question,
     options: cp.options
   }));
@@ -50,7 +104,9 @@ app.get('/api/lesson', (req, res) => {
     title: lessonData.title,
     subject: lessonData.subject,
     description: lessonData.description,
-    videoUrl: lessonData.videoUrl,
+    videoType: lessonData.videoType || 'youtube',
+    youtubeId: lessonData.youtubeId || 'jNQXAC9IVRw',
+    videoUrl: lessonData.videoUrl || '/sample.mp4',
     checkpoints: sanitizedCheckpoints
   });
 });
@@ -81,16 +137,32 @@ app.post('/api/checkpoints/verify', (req, res) => {
 
 /**
  * POST /api/submissions
- * Saves final student results to SQLite database
+ * Saves student results with deduplication and dispatches to Google Sheet Webhook if configured
  */
-app.post('/api/submissions', (req, res) => {
-  const { studentName, section, answers } = req.body;
+app.post('/api/submissions', async (req, res) => {
+  const { submissionId, studentName, section, answers } = req.body;
 
   if (!studentName || !section || !answers) {
     return res.status(400).json({ error: 'Pangalan, seksiyon, at mga sagot ay kinakailangan.' });
   }
 
-  // Calculate score securely on the server
+  const subId = submissionId || ('sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
+
+  // Deduplication check
+  try {
+    const existing = db.prepare('SELECT id, score, total_questions FROM submissions WHERE submission_id = ?').get(subId);
+    if (existing) {
+      return res.json({
+        success: true,
+        score: existing.score,
+        total: existing.total_questions,
+        percentage: Math.round((existing.score / existing.total_questions) * 100),
+        duplicate: true
+      });
+    }
+  } catch (err) {}
+
+  // Calculate score securely
   let score = 0;
   const total = lessonData.checkpoints.length;
   const breakdown = {};
@@ -105,19 +177,48 @@ app.post('/api/submissions', (req, res) => {
     };
   });
 
-  const insertStmt = db.prepare(`
-    INSERT INTO submissions (lesson_id, student_name, section, score, total_questions, answers_json)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `);
+  const percentage = Math.round((score / total) * 100);
 
-  insertStmt.run(
-    lessonData.id,
-    studentName.trim(),
-    section.trim(),
-    score,
-    total,
-    JSON.stringify(breakdown)
-  );
+  // 1. Save to SQLite
+  try {
+    const insertStmt = db.prepare(`
+      INSERT INTO submissions (submission_id, lesson_id, student_name, section, score, total_questions, answers_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    insertStmt.run(
+      subId,
+      lessonData.id,
+      studentName.trim(),
+      section.trim(),
+      score,
+      total,
+      JSON.stringify(breakdown)
+    );
+  } catch (dbErr) {
+    console.error('Database write error:', dbErr.message);
+  }
+
+  // 2. Dispatch to Google Sheets Webhook if configured (Audit Section 3)
+  if (lessonData.sheetWebhookUrl && lessonData.sheetWebhookUrl.startsWith('https://script.google.com')) {
+    try {
+      fetch(lessonData.sheetWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionId: subId,
+          studentName: studentName.trim(),
+          section: section.trim(),
+          score,
+          total,
+          percentage: `${percentage}%`
+        }),
+        redirect: 'follow'
+      }).catch(sheetErr => console.warn('Google Sheet webhook network notice:', sheetErr.message));
+    } catch (sheetSyncErr) {
+      console.warn('Google Sheet sync notice:', sheetSyncErr.message);
+    }
+  }
 
   res.json({
     success: true,
@@ -125,12 +226,12 @@ app.post('/api/submissions', (req, res) => {
     section,
     score,
     total,
-    percentage: Math.round((score / total) * 100)
+    percentage
   });
 });
 
 /**
- * Middleware: Simple Teacher PIN Check
+ * Middleware: Verify Teacher PIN
  */
 function verifyTeacherPin(req, res, next) {
   const pin = req.headers['x-teacher-pin'] || req.query.pin;
@@ -142,11 +243,10 @@ function verifyTeacherPin(req, res, next) {
 
 /**
  * GET /api/admin/results
- * Returns all student submissions and summary stats
  */
 app.get('/api/admin/results', verifyTeacherPin, (req, res) => {
   const query = db.prepare(`
-    SELECT id, student_name, section, score, total_questions, answers_json, created_at
+    SELECT id, submission_id, student_name, section, score, total_questions, answers_json, created_at
     FROM submissions
     WHERE lesson_id = ?
     ORDER BY id DESC
@@ -163,6 +263,7 @@ app.get('/api/admin/results', verifyTeacherPin, (req, res) => {
     totalStudents,
     averageScore: avgScore,
     totalQuestions: lessonData.checkpoints.length,
+    sheetWebhookUrl: lessonData.sheetWebhookUrl || '',
     submissions: rows.map(r => ({
       ...r,
       answers: JSON.parse(r.answers_json)
@@ -172,7 +273,6 @@ app.get('/api/admin/results', verifyTeacherPin, (req, res) => {
 
 /**
  * GET /api/admin/export-csv
- * Exports student scores to CSV for DepEd Class Record / Excel
  */
 app.get('/api/admin/export-csv', verifyTeacherPin, (req, res) => {
   const query = db.prepare(`
@@ -200,13 +300,13 @@ app.get('/api/admin/export-csv', verifyTeacherPin, (req, res) => {
 
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="Resulta_${lessonData.id}.csv"`);
-  res.send('\uFEFF' + csv); // Include BOM for proper Excel UTF-8 display
+  res.send('\uFEFF' + csv);
 });
 
 app.listen(PORT, () => {
   console.log(`=======================================================`);
-  console.log(`🚀 PKLP Interactive Video Platform is running!`);
-  console.log(`📱 Student View:   http://localhost:${PORT}`);
+  console.log(`🚀 PKLP Interactive Video Platform (Audit-Compliant)`);
+  console.log(`📱 YouTube Runner: http://localhost:${PORT}/play.html`);
   console.log(`📊 Guro Dashboard: http://localhost:${PORT}/admin.html`);
   console.log(`🔑 Teacher PIN:    ${TEACHER_PIN}`);
   console.log(`=======================================================`);
