@@ -1,54 +1,68 @@
 {
-  "id": "pklp-aralin-1",
-  "title": "Aralin 1: Pagsusuri sa Tekstong Impormatibo at Deskriptibo",
+  "id": "pklp-aralin-ang-tubig",
+  "title": "Aralin: Pagsusuri sa Tekstong Naratibo (Ang Tubig na Pinaghahatian)",
   "subject": "Baitang 11 - PKLP",
-  "description": "Panoorin ang aralin. May 3 pagsusuri na lalabas habang nanonood upang subukin ang iyong pag-unawa.",
-  "videoType": "youtube",
-  "youtubeId": "jNQXAC9IVRw",
-  "videoUrl": "/sample.mp4",
+  "description": "Panoorin at suriin ang kuwentong 'Ang Tubig na Pinaghahatian'. May 4 na pagsusuri sa iba't ibang bahagi ng kuwento upang subukin ang iyong pag-unawa sa banghay, tunggalian, at mensahe ng teksto.",
+  "videoType": "direct",
+  "youtubeId": "",
+  "videoUrl": "/ang_tubig_na_pinaghahatian.mp4",
   "sheetWebhookUrl": "",
   "checkpoints": [
     {
       "id": "cp1",
-      "t": 4,
-      "question": "Batay sa panimula ng bidyo, anong katangian ng Tekstong Impormatibo ang agad na napansin?",
+      "t": 27,
+      "question": "Sa simula ng kuwento, ipinakilala si Mang Tomas at ang kahalagahan ng patubig sa baryo. Anong elemento ng Tekstong Naratibo ang itinatatag sa bahaging ito?",
       "options": [
-        { "id": "A", "text": "Naglalahad ng mga tiyak at makatotohanang datos nang walang kinikilingan." },
-        { "id": "B", "text": "Puno ng matatalinghagang salita at personal na damdamin." },
-        { "id": "C", "text": "Nanghihikayat na bumili o sumang-ayon sa opinyon." },
-        { "id": "D", "text": "Nagkukuwento ng isang kathang-isip na alamat." }
+        { "id": "A", "text": "Tauhan at Tagpuan (Orientation / Setting and Character)" },
+        { "id": "B", "text": "Kasukdulan (Climax)" },
+        { "id": "C", "text": "Resolusyon (Resolution)" },
+        { "id": "D", "text": "Kakalasan (Falling Action)" }
       ],
       "correctAnswer": "A",
-      "feedbackCorrect": "Magaling! Ang Tekstong Impormatibo ay obhetibo at nakabatay sa mga tunay na impormasyon at datos.",
-      "feedbackIncorrect": "Maling sagot. Tandaan: Ang Tekstong Impormatibo ay obhetibo at naglalahad ng totoong impormasyon nang walang kinikilingan."
+      "feedbackCorrect": "Tumpak! Ang simula ng tekstong naratibo ay nagpapakilala sa pangunahing tauhan (Mang Tomas) at sa tagpuan o kaligiran ng kuwento.",
+      "feedbackIncorrect": "Hindi tumpak. Tandaan: Sa simula ng kuwento, laging inilalatag ang 'Tauhan at Tagpuan' bilang pundasyon ng salaysay."
     },
     {
       "id": "cp2",
-      "t": 8,
-      "question": "Nang ilarawan ang pisikal na anyo sa paligid nang walang halong emosyon, anong uri ng paglalarawan (Tekstong Deskriptibo) ito?",
+      "t": 99,
+      "question": "Sa pagpupulong sa ilalim ng puno, nagtalo ang mga magsasaka tungkol sa petisyon at pagpapalit ng pananim dahil sa pagtaas ng singil sa tubig. Anong uri ng tunggalian (conflict) ang kinakaharap ng komunidad?",
       "options": [
-        { "id": "A", "text": "Subhetibo (May halong damdamin o imahinasyon)" },
-        { "id": "B", "text": "Obhetibo (Nakabatay sa totoong pisikal na anyo)" },
-        { "id": "C", "text": "Persweysib (Nanghihikayat)" },
-        { "id": "D", "text": "Prosidyural (Naglalahad ng hakbang)" }
+        { "id": "A", "text": "Tao laban sa Sarili (Internal Conflict)" },
+        { "id": "B", "text": "Tao laban sa Lipunan at Patakaran (Social/Institutional Conflict)" },
+        { "id": "C", "text": "Tao laban sa Kalikasan (Supernatural Conflict)" },
+        { "id": "D", "text": "Walang anumang suliranin o tunggalian" }
       ],
       "correctAnswer": "B",
-      "feedbackCorrect": "Tumpak! Ang 'Obhetibong Paglalarawan' ay nakabatay sa totoong anyo at katotohanan nang walang pinapanigan.",
-      "feedbackIncorrect": "Hindi tumpak. Kapag ang paglalarawan ay walang halong personal na damdamin, ito ay tinatawag na 'Obhetibo'."
+      "feedbackCorrect": "Magaling! Ang pagtaas ng singil sa patubig at ang paniningil ng pamahalaan/ahensiya ay nagpapakita ng tunggalian sa pagitan ng mga mamamayan at ng lipunan o patakaran.",
+      "feedbackIncorrect": "Maling sagot. Ang tunggalian ay 'Tao laban sa Lipunan at Patakaran' dahil ang problema ay nagmula sa panlabas na desisyon ng pamunuan/institusyon."
     },
     {
       "id": "cp3",
-      "t": 13,
-      "question": "Bakit mahalagang matukoy ng isang mag-aaral sa pananaliksik kung ang teksto ay impormatibo o opinyon lamang?",
+      "t": 120,
+      "question": "Nang mag-usap si Mang Tomas at ang kaniyang anak na si Lito sa tahanan, sinabi ni Lito: 'Bakit hindi ninyo gawin pareho?'. Ano ang ipinahihiwatig ng payo ni Lito sa paglutas ng suliranin?",
       "options": [
-        { "id": "A", "text": "Upang matiyak ang kredibilidad at katotohanan ng mga datos sa pananaliksik." },
-        { "id": "B", "text": "Upang mapabilis ang pagsusulat kahit walang sanggunian." },
-        { "id": "C", "text": "Upang maging makulay at mahaba ang papel pampananaliksik." },
-        { "id": "D", "text": "Upang hindi na kailanganin pang magbasa ng iba pang aklat." }
+        { "id": "A", "text": "Maaaring pagsamahin ang agaran (alternatibong pananim) at pangmatagalang solusyon (petisyon) sa halip na magkahiwalay." },
+        { "id": "B", "text": "Dapat nang itigil ng mga magsasaka ang pagtatanim ng palay habang-buhay." },
+        { "id": "C", "text": "Ipaubaya na lamang sa ibang baryo ang pagpapasya." },
+        { "id": "D", "text": "Huwag nang magsagawa ng petisyon dahil walang makikinig." }
       ],
       "correctAnswer": "A",
-      "feedbackCorrect": "Napakagaling! Sa pananaliksik (PKLP), pundasyon ang kredibilidad at katumpakan ng mga sanggunian.",
-      "feedbackIncorrect": "Tandaan: Sinusuri natin ang teksto upang matiyak na totoo at mapagkakatiwalaan ang ating mga ebidensya sa pananaliksik."
+      "feedbackCorrect": "Tumpak! Ipinamalas ni Lito ang kahalagahan ng 'synthesis' o paghahanap ng gitnang solusyon na sumasagot sa agarang pangangailangan at pangmatagalang adbokasiya.",
+      "feedbackIncorrect": "Hindi tumpak. Ang payo ni Lito ay 'Bakit hindi ninyo gawin pareho?' na nagpapakitang puwedeng pagsamahin ang dalawang magkaibang mungkahi upang makatulong sa lahat."
+    },
+    {
+      "id": "cp4",
+      "t": 220,
+      "question": "Sa pagtatapos, sinabi ni Mang Tomas: 'Hindi pala kailangang pare-pareho ang ating gawin upang magtulungan.' Ano ang pangunahing mensahe at aral ng kuwento?",
+      "options": [
+        { "id": "A", "text": "Ang pagkakaisa ay hindi nangangahulugang pare-pareho ang kilos, kundi ang pagtutulungan ng bawat isa gamit ang kanilang iba't ibang kakayahan." },
+        { "id": "B", "text": "Bawat pamilya ay kailangang magkanya-kanya kapag may krisis." },
+        { "id": "C", "text": "Mali ang ginawang petisyon ng mga magsasaka." },
+        { "id": "D", "text": "Walang maidudulot na kabutihan ang pakikipagkapwa-tao." }
+      ],
+      "correctAnswer": "A",
+      "feedbackCorrect": "Napakagaling! Ang tunay na diwa ng teksto ay ang pagkakaisa sa gitna ng pagkakaiba-iba—ang suliranin ng pamayanan ay hinaharap nang sama-sama.",
+      "feedbackIncorrect": "Maling sagot. Ang tamang sagot ay A: Ang tunay na diwa ng kuwento ay ang pagtutulungan at pagkakaisa kahit may magkakaibang diskarte ang bawat magsasaka."
     }
   ]
 }

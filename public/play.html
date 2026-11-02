@@ -341,6 +341,7 @@
     <!-- Player Container -->
     <div class="player-container">
       <div id="yt-player"></div>
+      <video id="html5-player" class="hidden" playsinline style="width:100%;height:100%;object-fit:contain;background:#000;border-radius:12px;"></video>
 
       <!-- Fallback button if Android blocks autoplay -->
       <div id="fallback-play" class="fallback-play hidden">
@@ -433,7 +434,38 @@
     const btnManualPlay = document.getElementById('btn-manual-play');
     const btnFullscreen = document.getElementById('btn-fullscreen');
 
-    // --- 2. Robust Player Initializer (Guarantees edited video is loaded) ---
+    // --- 2. Robust Player Initializer (YouTube & Direct HTML5 MP4) ---
+    function setupPlayer() {
+      if (!lessonData) return;
+
+      const isDirect = lessonData.videoType === 'direct' || (!lessonData.youtubeId && lessonData.videoUrl);
+      if (isDirect && lessonData.videoUrl) {
+        const ytDiv = document.getElementById('yt-player');
+        const h5 = document.getElementById('html5-player');
+        if (ytDiv) ytDiv.classList.add('hidden');
+        if (h5) {
+          h5.classList.remove('hidden');
+          h5.src = lessonData.videoUrl;
+        }
+
+        player = {
+          playVideo: () => h5.play(),
+          pauseVideo: () => h5.pause(),
+          getCurrentTime: () => h5.currentTime,
+          seekTo: (sec) => { h5.currentTime = sec; },
+          getPlayerState: () => (h5.ended ? 0 : h5.paused ? 2 : 1)
+        };
+
+        h5.onplay = () => onPlayerStateChange({ data: 1 });
+        h5.onpause = () => onPlayerStateChange({ data: 2 });
+        h5.onended = () => onPlayerStateChange({ data: 0 });
+        playerReady = true;
+      } else {
+        const targetVideoId = lessonData.youtubeId || 'jNQXAC9IVRw';
+        initOrCuePlayer(targetVideoId);
+      }
+    }
+
     function initOrCuePlayer(videoId) {
       if (!window.YT || !window.YT.Player) {
         setTimeout(() => initOrCuePlayer(videoId), 200);
@@ -465,7 +497,7 @@
     }
 
     window.onYouTubeIframeAPIReady = function() {
-      if (lessonData && lessonData.youtubeId) {
+      if (lessonData && lessonData.youtubeId && lessonData.videoType !== 'direct') {
         initOrCuePlayer(lessonData.youtubeId);
       }
     };
@@ -487,9 +519,7 @@
           done: false
         }));
 
-        // Load the actual video specified by the teacher
-        const targetVideoId = lessonData.youtubeId || 'jNQXAC9IVRw';
-        initOrCuePlayer(targetVideoId);
+        setupPlayer();
       })
       .catch(err => console.error('Error fetching lesson:', err));
 
@@ -512,7 +542,8 @@
 
       // Fallback: If not playing within 2s, show manual play button
       setTimeout(() => {
-        if (!player || player.getPlayerState() !== YT.PlayerState.PLAYING) {
+        const isPlaying = player && player.getPlayerState && player.getPlayerState() === 1;
+        if (!isPlaying) {
           fallbackPlay.classList.remove('hidden');
         }
       }, 2000);
@@ -525,7 +556,10 @@
 
     // --- 5. 200ms Polling Loop & Seek-Locking ---
     function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.PLAYING) {
+      const playingState = (window.YT && YT.PlayerState) ? YT.PlayerState.PLAYING : 1;
+      const endedState = (window.YT && YT.PlayerState) ? YT.PlayerState.ENDED : 0;
+
+      if (event.data === playingState) {
         fallbackPlay.classList.add('hidden');
         if (!pollInterval) {
           pollInterval = setInterval(pollPlaybackTime, 200);
@@ -537,14 +571,16 @@
         }
       }
 
-      if (event.data === YT.PlayerState.ENDED) {
+      if (event.data === endedState) {
         finishLesson();
       }
     }
 
     function pollPlaybackTime() {
       if (!player || typeof player.getCurrentTime !== 'function') return;
-      if (player.getPlayerState() !== YT.PlayerState.PLAYING) return;
+      const currentState = player.getPlayerState();
+      const playingState = (window.YT && YT.PlayerState) ? YT.PlayerState.PLAYING : 1;
+      if (currentState !== playingState) return;
 
       const t = player.getCurrentTime();
       const next = checkpoints.find(c => !c.done);
