@@ -1,15 +1,12 @@
 /**
- * GOOGLE APPS SCRIPT: Auto-append Interactive Video Scores
- * Compliant with Claude's Architectural Audit (LockService + Deduplication)
+ * GOOGLE APPS SCRIPT: Auto-append Interactive Video Scores by Section
+ * Compliant with Claude's Architectural Audit (LockService + Section Tab Separation + Deduplication)
  * 
  * INSTRUCTIONS FOR TEACHER:
  * 1. Open your Google Sheet in Google Drive.
  * 2. Click: Extensions -> Apps Script.
  * 3. Replace all existing text with this code.
- * 4. Click: Deploy -> New deployment -> Select type: Web app.
- *    - Execute as: Me (your Google account)
- *    - Who has access: Anyone
- * 5. Click "Deploy", authorize permissions, and copy the Web App URL!
+ * 4. Click: Deploy -> Manage deployments -> Click the Pencil ✏️ (Edit) -> Version: New version -> Deploy.
  */
 function doPost(e) {
   try {
@@ -19,15 +16,16 @@ function doPost(e) {
     lock.waitLock(20000);
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
-      let sh = ss.getSheetByName('Results');
-      if (!sh) {
-        sh = ss.getActiveSheet();
-        sh.setName('Results');
-      }
 
-      // Check header row
-      if (sh.getLastRow() === 0) {
-        sh.appendRow(['Submission ID', 'Petsa at Oras', 'Pangalan ng Mag-aaral', 'Seksiyon', 'Iskor', 'Kabuuan', 'Bahagdan (%)']);
+      // Get section name (e.g. "11 - STEM A")
+      const sectionName = (d.section || 'Iba pang Seksiyon').trim();
+
+      // Find or automatically create a separate tab for this section
+      let sh = ss.getSheetByName(sectionName);
+      if (!sh) {
+        sh = ss.insertSheet(sectionName);
+        sh.appendRow(['Submission ID', 'Petsa at Oras', 'Pangalan ng Mag-aaral', 'Iskor', 'Kabuuan', 'Bahagdan (%)']);
+        sh.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#f1f5f9');
       }
 
       // Deduplication: Verify submissionId doesn't already exist in column A
@@ -42,14 +40,13 @@ function doPost(e) {
           d.submissionId,
           new Date(),
           d.studentName,
-          d.section,
           d.score,
           d.total,
           percent
         ]);
       }
 
-      return ContentService.createTextOutput(JSON.stringify({ ok: true, duplicate: !!seen }))
+      return ContentService.createTextOutput(JSON.stringify({ ok: true, duplicate: !!seen, section: sectionName }))
         .setMimeType(ContentService.MimeType.JSON);
     } finally {
       lock.releaseLock();
@@ -63,6 +60,6 @@ function doPost(e) {
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     ok: true,
-    message: "PKLP Google Sheets Webhook is active and listening!"
+    message: "PKLP Section-Separated Webhook is ready!"
   })).setMimeType(ContentService.MimeType.JSON);
 }

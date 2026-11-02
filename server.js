@@ -166,6 +166,11 @@ app.post('/api/submissions', async (req, res) => {
     return res.status(400).json({ error: 'Pangalan, seksiyon, at mga sagot ay kinakailangan.' });
   }
 
+  // Always re-read fresh lesson configuration from disk
+  try {
+    lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
+  } catch (e) {}
+
   const subId = submissionId || ('sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
 
   // Deduplication check
@@ -219,10 +224,10 @@ app.post('/api/submissions', async (req, res) => {
     console.error('Database write error:', dbErr.message);
   }
 
-  // 2. Dispatch to Google Sheets Webhook if configured (Audit Section 3)
+  // 2. Dispatch to Google Sheets Webhook if configured (Awaited with redirect: follow)
   if (lessonData.sheetWebhookUrl && lessonData.sheetWebhookUrl.startsWith('https://script.google.com')) {
     try {
-      fetch(lessonData.sheetWebhookUrl, {
+      const sheetRes = await fetch(lessonData.sheetWebhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -234,7 +239,9 @@ app.post('/api/submissions', async (req, res) => {
           percentage: `${percentage}%`
         }),
         redirect: 'follow'
-      }).catch(sheetErr => console.warn('Google Sheet webhook network notice:', sheetErr.message));
+      });
+      const sheetJson = await sheetRes.json().catch(() => ({}));
+      console.log('Google Sheet webhook sync success:', sheetJson);
     } catch (sheetSyncErr) {
       console.warn('Google Sheet sync notice:', sheetSyncErr.message);
     }
