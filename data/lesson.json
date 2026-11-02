@@ -1,68 +1,68 @@
 {
-  "id": "pklp-aralin-ang-tubig",
-  "title": "Aralin: Pagsusuri sa Tekstong Naratibo (Ang Tubig na Pinaghahatian)",
+  "id": "pklp-aralin-tinig-nakaraan",
+  "title": "Aralin: Ang mga Tinig ng Nakaraan (Kasaysayan, Lipunan, at Pakikibaka)",
   "subject": "Baitang 11 - PKLP",
-  "description": "Panoorin at suriin ang kuwentong 'Ang Tubig na Pinaghahatian'. May 4 na pagsusuri sa iba't ibang bahagi ng kuwento upang subukin ang iyong pag-unawa sa banghay, tunggalian, at mensahe ng teksto.",
+  "description": "Panoorin at suriin ang motion comic na 'Ang mga Tinig ng Nakaraan'. Sagutin ang 4 na interaktibong pagsusuri kaugnay ng mga termino at konseptong pangkasaysayan at panlipunan.",
   "videoType": "direct",
   "youtubeId": "",
-  "videoUrl": "/ang_tubig_na_pinaghahatian.mp4",
+  "videoUrl": "/ang_mga_tinig_ng_nakaraan.mp4",
   "sheetWebhookUrl": "",
   "checkpoints": [
     {
       "id": "cp1",
-      "t": 27,
-      "question": "Sa simula ng kuwento, ipinakilala si Mang Tomas at ang kahalagahan ng patubig sa baryo. Anong elemento ng Tekstong Naratibo ang itinatatag sa bahaging ito?",
+      "t": 48,
+      "question": "Batay sa panimula ng kuwento, ano ang pangunahing pagkakaiba ng konseptong 'Pakikibaka' at 'Pakikiangkop' bilang tugon sa suliranin?",
       "options": [
-        { "id": "A", "text": "Tauhan at Tagpuan (Orientation / Setting and Character)" },
-        { "id": "B", "text": "Kasukdulan (Climax)" },
-        { "id": "C", "text": "Resolusyon (Resolution)" },
-        { "id": "D", "text": "Kakalasan (Falling Action)" }
+        { "id": "A", "text": "Ang pakikibaka ay pagkilos laban sa kawalan ng katarungan, habang ang pakikiangkop ay pagbabago ng paraan upang makaraos." },
+        { "id": "B", "text": "Ang pakikibaka ay pagsuko, habang ang pakikiangkop ay pananakop sa ibang bansa." },
+        { "id": "C", "text": "Pareho itong nangangahulugan ng agarang marahas na digmaan." },
+        { "id": "D", "text": "Walang anumang pagkakaiba ang dalawang termino." }
       ],
       "correctAnswer": "A",
-      "feedbackCorrect": "Tumpak! Ang simula ng tekstong naratibo ay nagpapakilala sa pangunahing tauhan (Mang Tomas) at sa tagpuan o kaligiran ng kuwento.",
-      "feedbackIncorrect": "Hindi tumpak. Tandaan: Sa simula ng kuwento, laging inilalatag ang 'Tauhan at Tagpuan' bilang pundasyon ng salaysay."
+      "feedbackCorrect": "Tumpak! Ayon sa aralin, ang 'Pakikibaka' ay pagsisikap o pagkilos laban sa pang-aapi, samantalang ang 'Pakikiangkop' ay pagbabago ng gawi upang makaraos.",
+      "feedbackIncorrect": "Hindi tumpak. Tandaan: Ang Pakikibaka ay pagharap sa suliranin, habang ang Pakikiangkop ay praktikal na pag-aakma upang makaraos."
     },
     {
       "id": "cp2",
-      "t": 99,
-      "question": "Sa pagpupulong sa ilalim ng puno, nagtalo ang mga magsasaka tungkol sa petisyon at pagpapalit ng pananim dahil sa pagtaas ng singil sa tubig. Anong uri ng tunggalian (conflict) ang kinakaharap ng komunidad?",
+      "t": 96,
+      "question": "Sa ilalim ng kolonyalismong Espanyol, anong patakaran ang nag-atas ng sapilitang paggawa sa mga kalalakihang Pilipino ayon sa umiiral na tuntunin noon?",
       "options": [
-        { "id": "A", "text": "Tao laban sa Sarili (Internal Conflict)" },
-        { "id": "B", "text": "Tao laban sa Lipunan at Patakaran (Social/Institutional Conflict)" },
-        { "id": "C", "text": "Tao laban sa Kalikasan (Supernatural Conflict)" },
-        { "id": "D", "text": "Walang anumang suliranin o tunggalian" }
+        { "id": "A", "text": "Polo y servicios" },
+        { "id": "B", "text": "Encomienda" },
+        { "id": "C", "text": "Tributo" },
+        { "id": "D", "text": "Principalia" }
       ],
-      "correctAnswer": "B",
-      "feedbackCorrect": "Magaling! Ang pagtaas ng singil sa patubig at ang paniningil ng pamahalaan/ahensiya ay nagpapakita ng tunggalian sa pagitan ng mga mamamayan at ng lipunan o patakaran.",
-      "feedbackIncorrect": "Maling sagot. Ang tunggalian ay 'Tao laban sa Lipunan at Patakaran' dahil ang problema ay nagmula sa panlabas na desisyon ng pamunuan/institusyon."
+      "correctAnswer": "A",
+      "feedbackCorrect": "Magaling! Ang 'Polo y servicios' ay ang sapilitang paglilingkod-paggawa na ipinataw sa mga katutubong sakop sa ilalim ng pamamahala ng Espanya.",
+      "feedbackIncorrect": "Maling sagot. Ang 'Polo y servicios' ang sapilitang paggawa, samantalang ang Tributo ay buwis at ang Encomienda ay ang lupang ipinagkatiwala."
     },
     {
       "id": "cp3",
-      "t": 120,
-      "question": "Nang mag-usap si Mang Tomas at ang kaniyang anak na si Lito sa tahanan, sinabi ni Lito: 'Bakit hindi ninyo gawin pareho?'. Ano ang ipinahihiwatig ng payo ni Lito sa paglutas ng suliranin?",
+      "t": 186,
+      "question": "Noong 1937, nagtagumpay ang mga 'Sufragista' sa pamamagitan ng plebisito. Ano ang makasaysayang karapatang ipinaglaban at kinilala sa kababaihang Pilipino?",
       "options": [
-        { "id": "A", "text": "Maaaring pagsamahin ang agaran (alternatibong pananim) at pangmatagalang solusyon (petisyon) sa halip na magkahiwalay." },
-        { "id": "B", "text": "Dapat nang itigil ng mga magsasaka ang pagtatanim ng palay habang-buhay." },
-        { "id": "C", "text": "Ipaubaya na lamang sa ibang baryo ang pagpapasya." },
-        { "id": "D", "text": "Huwag nang magsagawa ng petisyon dahil walang makikinig." }
+        { "id": "A", "text": "Karapatang bumoto at makilahok sa halalan (Sufrahiyo)" },
+        { "id": "B", "text": "Pagbabawal sa kababaihan na magkaroon ng propesyon" },
+        { "id": "C", "text": "Pagtanggal ng karapatang mag-aral sa pampublikong paaralan" },
+        { "id": "D", "text": "Pagbabalik sa mahigpit na sistemang patriyarkiya" }
       ],
       "correctAnswer": "A",
-      "feedbackCorrect": "Tumpak! Ipinamalas ni Lito ang kahalagahan ng 'synthesis' o paghahanap ng gitnang solusyon na sumasagot sa agarang pangangailangan at pangmatagalang adbokasiya.",
-      "feedbackIncorrect": "Hindi tumpak. Ang payo ni Lito ay 'Bakit hindi ninyo gawin pareho?' na nagpapakitang puwedeng pagsamahin ang dalawang magkaibang mungkahi upang makatulong sa lahat."
+      "feedbackCorrect": "Tumpak! Ang mga Sufragista ay nagtaguyod ng 'Sufrahiyo' o ang karapatang bumoto ng kababaihan na pinagtibay sa plebisito noong 1937.",
+      "feedbackIncorrect": "Maling sagot. Ipinaglaban ng mga Sufragista ang karapatang bumoto ng kababaihan tungo sa pagkakapantay-pantay."
     },
     {
       "id": "cp4",
-      "t": 220,
-      "question": "Sa pagtatapos, sinabi ni Mang Tomas: 'Hindi pala kailangang pare-pareho ang ating gawin upang magtulungan.' Ano ang pangunahing mensahe at aral ng kuwento?",
+      "t": 227,
+      "question": "Sa panahon ng Okupasyong Hapones, bakit naging mahalagang usapin ang 'Soberanya' na ipinaglaban ng mga kilusang gerilya (tulad ng HUKBALAHAP at Hunters-ROTC)?",
       "options": [
-        { "id": "A", "text": "Ang pagkakaisa ay hindi nangangahulugang pare-pareho ang kilos, kundi ang pagtutulungan ng bawat isa gamit ang kanilang iba't ibang kakayahan." },
-        { "id": "B", "text": "Bawat pamilya ay kailangang magkanya-kanya kapag may krisis." },
-        { "id": "C", "text": "Mali ang ginawang petisyon ng mga magsasaka." },
-        { "id": "D", "text": "Walang maidudulot na kabutihan ang pakikipagkapwa-tao." }
+        { "id": "A", "text": "Dahil ito ang pinakamataas na kapangyarihang mamahala sa sariling estado nang malaya sa dayuhang kontrol." },
+        { "id": "B", "text": "Dahil ito ang tawag sa sistema ng pamamahagi ng lupa sa mga asyenda." },
+        { "id": "C", "text": "Dahil ito ang sensura na ipinataw ng mga mananakop." },
+        { "id": "D", "text": "Dahil ito ay tumutukoy sa simpleng pagtanggap sa okupasyon." }
       ],
       "correctAnswer": "A",
-      "feedbackCorrect": "Napakagaling! Ang tunay na diwa ng teksto ay ang pagkakaisa sa gitna ng pagkakaiba-iba—ang suliranin ng pamayanan ay hinaharap nang sama-sama.",
-      "feedbackIncorrect": "Maling sagot. Ang tamang sagot ay A: Ang tunay na diwa ng kuwento ay ang pagtutulungan at pagkakaisa kahit may magkakaibang diskarte ang bawat magsasaka."
+      "feedbackCorrect": "Napakagaling! Ang 'Soberanya' ay ang pinakamataas na kapangyarihang mamahala sa sariling bayan—ang sentral na adhikaing ipinagtanggol ng mga gerilya at sibilyan.",
+      "feedbackIncorrect": "Hindi tumpak. Ang 'Soberanya' ang pinakamataas na kapangyarihang magpasya at mamahala sa sariling bansa."
     }
   ]
 }
