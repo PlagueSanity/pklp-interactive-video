@@ -317,6 +317,7 @@
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">
           Hintayin ang hudyat ng iyong guro. Kusang magbubukas ang pahinang ito kapag binuksan na ang sesyon.
         </p>
+        <button type="button" id="btn-check-session" class="btn-action hidden" style="margin-top: 12px;">🔄 Tingnan muli</button>
       </div>
 
       <form id="start-form">
@@ -578,12 +579,34 @@
         .catch(err => console.error('Error fetching sections:', err));
     }
 
-    loadClass();
-    // Keep checking while the start screen is showing, so it opens/closes when the teacher does
-    sessionPoll = setInterval(() => {
-      if (nameModal.classList.contains('hidden')) { clearInterval(sessionPoll); return; }
+    // Keep checking for 10 minutes while the start screen is showing, so it opens/closes when the teacher does.
+    // After that, stop (a phone left on this page must not keep the free server awake) and offer a button.
+    const POLL_EVERY_MS = 10000;
+    const POLL_FOR_MS = 10 * 60 * 1000;
+    const btnCheckSession = document.getElementById('btn-check-session');
+
+    function startSessionPoll() {
+      clearInterval(sessionPoll);
+      btnCheckSession.classList.add('hidden');
+      const stopAt = Date.now() + POLL_FOR_MS;
+      sessionPoll = setInterval(() => {
+        if (nameModal.classList.contains('hidden')) { clearInterval(sessionPoll); return; }
+        if (Date.now() > stopAt) {
+          clearInterval(sessionPoll);
+          btnCheckSession.classList.remove('hidden');
+          return;
+        }
+        loadClass();
+      }, POLL_EVERY_MS);
+    }
+
+    btnCheckSession.addEventListener('click', () => {
       loadClass();
-    }, 10000);
+      startSessionPoll();
+    });
+
+    loadClass();
+    startSessionPoll();
 
     // --- 4. Synchronous Autoplay on Start Button Click ---
     startForm.addEventListener('submit', (e) => {
