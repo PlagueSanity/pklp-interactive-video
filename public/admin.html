@@ -5,112 +5,153 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Guro Dashboard - PKLP Interactive Video</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .dash-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 18px; margin-bottom: 18px; }
+    .dash-card h2 { font-size: 0.95rem; margin: 0 0 4px; }
+    .dash-hint { color: var(--text-muted); font-size: 0.8rem; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .row input { flex: 1; min-width: 180px; margin: 0; }
+    .btn-sm { width: auto; padding: 8px 16px; font-size: 0.85rem; }
+    .teacher-table td, .teacher-table th { font-size: 0.85rem; }
+    .code-pill { font-family: ui-monospace, Consolas, monospace; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; }
+    .lang-switch { display: inline-flex; border-radius: 6px; overflow: hidden; border: 1px solid rgba(148,163,184,0.6); }
+    .lang-switch button { border: none; background: transparent; color: inherit; padding: 5px 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+    .lang-switch button.active { background: #38bdf8; color: #0f172a; }
+  </style>
 </head>
 <body style="background-color: #f1f5f9; padding: 20px;">
 
-  <!-- PIN Modal -->
+  <!-- Login -->
   <div id="pin-modal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 100;">
     <div style="background: #fff; padding: 24px; border-radius: 12px; width: 100%; max-width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-      <h3 style="font-size: 1.1rem; margin-bottom: 6px;">🔒 Guro Dashboard Login</h3>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
-        Ilagay ang iyong Teacher PIN upang buksan ang mga resulta. (Default PIN: <code>1234</code>)
-      </p>
-      <input type="password" id="input-pin" placeholder="Ilagay ang PIN..." style="margin-bottom: 14px;" autofocus>
-      <button id="btn-unlock" class="btn">Buksan ang Talaan</button>
-      <p id="pin-error" style="color: var(--danger); font-size: 0.8rem; margin-top: 8px;" class="hidden">
-        Maling PIN. Pakisubukang muli.
-      </p>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <h3 style="font-size: 1.1rem; margin: 0;">🔒 Guro Dashboard</h3>
+        <div class="lang-switch" style="color: #334155;">
+          <button type="button" data-lang="en">EN</button><button type="button" data-lang="fil">FIL</button>
+        </div>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;" data-i18n="loginHint"></p>
+      <input type="password" id="input-pin" data-i18n-ph="loginPlaceholder" style="margin-bottom: 14px;" autofocus autocomplete="off">
+      <button id="btn-unlock" class="btn" data-i18n="loginButton"></button>
+      <p id="pin-error" style="color: var(--danger); font-size: 0.8rem; margin-top: 8px;" class="hidden" data-i18n="loginError"></p>
     </div>
   </div>
 
-  <!-- Main Dashboard Container -->
   <div class="container admin-container hidden" id="admin-main">
     <header class="app-header" style="background: #0f172a; padding: 18px 24px;">
       <div>
-        <h1 style="font-size: 1.15rem;">📊 Guro Dashboard: Mga Resulta sa PKLP</h1>
-        <small id="admin-lesson-title" style="color: #94a3b8; font-size: 0.8rem;">Aralin 1: Tekstong Impormatibo</small>
+        <h1 style="font-size: 1.15rem;">👋 <span data-i18n="hello"></span>, <span id="teacher-name"></span>!</h1>
+        <small id="admin-lesson-title" style="color: #94a3b8; font-size: 0.8rem;"></small>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <a href="/studio.html" class="btn" style="width: auto; padding: 6px 14px; font-size: 0.8rem; background: #38bdf8; color: #0f172a; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center;">
-          🎬 Guro Studio
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <div class="lang-switch" style="color: #fff;">
+          <button type="button" data-lang="en">EN</button><button type="button" data-lang="fil">FIL</button>
+        </div>
+        <a href="/studio.html" id="link-studio" class="btn hidden" style="width: auto; padding: 6px 14px; font-size: 0.8rem; background: #38bdf8; color: #0f172a; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center;">
+          🎬 <span data-i18n="studio"></span>
         </a>
-        <button id="btn-refresh" style="background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
-          🔄 I-refresh
-        </button>
-        <button id="btn-export-csv" class="btn" style="width: auto; padding: 6px 14px; font-size: 0.8rem; background: var(--success);">
-          📥 I-download ang CSV
-        </button>
+        <button id="btn-refresh" style="background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">🔄 <span data-i18n="refresh"></span></button>
+        <button id="btn-logout" style="background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600;" data-i18n="logout"></button>
       </div>
     </header>
 
     <div class="card-content" style="padding: 24px;">
-      <!-- Metrics Overview -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-val" id="metric-total-students">0</div>
-          <div class="metric-label">Nakakumpletong Mag-aaral</div>
+
+      <!-- 0. Session open/close -->
+      <div class="dash-card" id="session-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2>🚦 <span data-i18n="session"></span>: <span id="session-state">...</span></h2>
+          <p class="dash-hint" id="session-hint"></p>
         </div>
-        <div class="metric-card">
-          <div class="metric-val" id="metric-avg-score">0.0</div>
-          <div class="metric-label">Average Score (sa 3)</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-val" id="metric-pass-rate">0%</div>
-          <div class="metric-label">Passing Rate (≥ 2/3)</div>
+        <button id="btn-toggle-session" class="btn btn-sm" style="min-width: 190px;">...</button>
+      </div>
+
+      <!-- 1. Student link -->
+      <div class="dash-card">
+        <h2>🔗 <span data-i18n="linkTitle"></span></h2>
+        <p class="dash-hint" style="margin-bottom: 10px;" data-i18n="linkHint"></p>
+        <div class="row">
+          <input type="text" id="student-link" readonly>
+          <button id="btn-copy-link" class="btn btn-sm" data-i18n="copy"></button>
         </div>
       </div>
 
-      <!-- Section List: the choices students see on the start screen -->
-      <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 18px; margin-bottom: 18px;">
+      <!-- 2. Sections -->
+      <div class="dash-card">
         <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;">
-          <strong style="font-size: 0.95rem;">🏫 Mga Seksiyon na Pagpipilian ng Mag-aaral</strong>
-          <small id="sections-status" style="color: var(--text-muted); font-size: 0.8rem;"></small>
+          <h2>🏫 <span data-i18n="sectionsTitle"></span></h2>
+          <small id="sections-status" class="dash-hint"></small>
         </div>
-        <small style="color: var(--text-muted); font-size: 0.8rem;">Ito ang lalabas sa listahan ng seksiyon bago magsimula ang mag-aaral. Hindi nabubura ang mga resulta kapag tinanggal ang isang seksiyon.</small>
+        <p class="dash-hint" data-i18n="sectionsHint"></p>
         <div id="sections-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0;"></div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <input type="text" id="input-new-section" placeholder="Halimbawa: 11 - STEM C" maxlength="60" style="flex: 1; min-width: 180px; margin: 0;">
-          <button id="btn-add-section" class="btn" style="width: auto; padding: 8px 16px; font-size: 0.85rem;">➕ Idagdag</button>
+        <div class="row">
+          <input type="text" id="input-new-section" data-i18n-ph="sectionPlaceholder" maxlength="60">
+          <button id="btn-add-section" class="btn btn-sm" data-i18n="add"></button>
         </div>
       </div>
 
-      <!-- Controls & Filter -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <label for="filter-section" style="margin: 0; font-size: 0.85rem;">Salain ayon sa Seksiyon:</label>
-          <select id="filter-section" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
-            <option value="ALL">Lahat ng Seksiyon</option>
-          </select>
+      <!-- 3. Teachers (main teacher only) -->
+      <div class="dash-card hidden" id="teachers-card">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;">
+          <h2>👩‍🏫 <span data-i18n="teachersTitle"></span></h2>
+          <small id="teachers-status" class="dash-hint"></small>
         </div>
-        <div style="font-size: 0.82rem; color: var(--text-muted);" id="table-count-label">
-          Ipinapakita: 0 mag-aaral
+        <p class="dash-hint" data-i18n-html="teachersHint"></p>
+        <div class="table-responsive" style="margin: 12px 0;">
+          <table class="teacher-table">
+            <thead>
+              <tr>
+                <th data-i18n="colName"></th><th data-i18n="colCode"></th><th data-i18n="colStudentLink"></th>
+                <th style="text-align: center;" data-i18n="colFinished"></th><th></th>
+              </tr>
+            </thead>
+            <tbody id="teachers-tbody"></tbody>
+          </table>
+        </div>
+        <div class="row">
+          <input type="text" id="input-new-teacher" data-i18n-ph="teacherPlaceholder" maxlength="60">
+          <button id="btn-add-teacher" class="btn btn-sm" data-i18n="addTeacher"></button>
         </div>
       </div>
 
-      <!-- Results Table -->
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Pangalan ng Mag-aaral</th>
-              <th>Seksiyon</th>
-              <th style="text-align: center;">Q1</th>
-              <th style="text-align: center;">Q2</th>
-              <th style="text-align: center;">Q3</th>
-              <th style="text-align: center;">Iskor</th>
-              <th style="text-align: center;">Bahagdan</th>
-              <th>Oras / Petsa</th>
-            </tr>
-          </thead>
-          <tbody id="submissions-tbody">
-            <tr>
-              <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 24px;">
-                Wala pang naitalang resulta mula sa mga mag-aaral.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- 4. Results -->
+      <div class="dash-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+          <h2>📊 <span data-i18n="resultsTitle"></span></h2>
+          <button id="btn-export-csv" class="btn btn-sm" style="background: var(--success);" data-i18n="downloadCsv"></button>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-val" id="metric-total-students">0</div>
+            <div class="metric-label" data-i18n="metricFinished"></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val" id="metric-avg-score">0</div>
+            <div class="metric-label" data-i18n="metricAverage"></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val" id="metric-pass-rate">0%</div>
+            <div class="metric-label" id="metric-pass-label"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <label for="filter-section" style="margin: 0; font-size: 0.85rem;" data-i18n="filterSection"></label>
+            <select id="filter-section" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+              <option value="ALL"></option>
+            </select>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted);" id="table-count-label"></div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead><tr id="results-head"></tr></thead>
+            <tbody id="submissions-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

@@ -51,12 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function unlockStudio(pin) {
-    fetch(`/api/admin/results?pin=${encodeURIComponent(pin)}`)
+    // Only the main teacher (master code) may edit lessons
+    fetch('/api/admin/me', { headers: { 'x-teacher-pin': pin } })
       .then(res => {
         if (!res.ok) throw new Error('Unauthorized');
         return res.json();
       })
-      .then(adminData => {
+      .then(who => {
+        if (!who.isAdmin) throw new Error('Not main teacher');
         currentPin = pin;
         sessionStorage.setItem('pklp_teacher_pin', pin);
         pinModal.classList.add('hidden');

@@ -304,8 +304,18 @@
       <div style="text-align: center; margin-bottom: 16px;">
         <span style="font-size: 2.2rem;">📖</span>
         <h2 id="modal-lesson-title" style="font-size: 1.15rem; margin-top: 6px;">Naglo-load ang Aralin...</h2>
+        <p id="modal-teacher" class="hidden" style="font-size: 0.85rem; color: #38bdf8; font-weight: 600; margin-top: 4px;"></p>
         <p id="modal-lesson-desc" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
           Panoorin ang aralin at sagutin ang mga katanungan sa bawat checkpoint.
+        </p>
+      </div>
+
+      <!-- Shown while the teacher's session is closed -->
+      <div id="session-closed" class="hidden" style="text-align: center; background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.5); border-radius: 10px; padding: 18px 14px;">
+        <div style="font-size: 2rem;">🔒</div>
+        <h3 style="font-size: 1rem; margin-top: 4px; color: #fca5a5;">Sarado pa ang sesyon</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">
+          Hintayin ang hudyat ng iyong guro. Kusang magbubukas ang pahinang ito kapag binuksan na ang sesyon.
         </p>
       </div>
 
@@ -412,6 +422,8 @@
     let currentStudent = { name: '', section: '' };
     let studentAnswers = {};
     let activeCheckpoint = null;
+    // Which teacher's class this is (from the teacher's own link: play.html?guro=...)
+    const guro = new URLSearchParams(location.search).get('guro') || '';
     let submissionId = 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7);
 
     // DOM Elements
@@ -523,19 +535,55 @@
       })
       .catch(err => console.error('Error fetching lesson:', err));
 
-    // Section choices come from the teacher's list in the dashboard
-    fetch('/api/sections?_t=' + Date.now(), { cache: 'no-store' })
-      .then(r => r.json())
-      .then(data => {
-        studentSectionSelect.innerHTML = '<option value="" disabled selected>Pumili ng seksiyon...</option>';
-        (data.sections || []).forEach(sec => {
-          const opt = document.createElement('option');
-          opt.value = sec;
-          opt.textContent = sec;
-          studentSectionSelect.appendChild(opt);
-        });
-      })
-      .catch(err => console.error('Error fetching sections:', err));
+    // Section choices and open/closed state come from the teacher's dashboard
+    let sectionsShown = '';
+    let sessionPoll = null;
+
+    function loadClass() {
+      fetch('/api/sections?_t=' + Date.now() + (guro ? '&guro=' + encodeURIComponent(guro) : ''), { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) {
+            studentSectionSelect.innerHTML = '<option value="" disabled selected>Hindi ma-load</option>';
+            document.getElementById('btn-start').disabled = true;
+            const msg = document.getElementById('modal-teacher');
+            msg.textContent = '⚠️ ' + data.error;
+            msg.style.color = '#f87171';
+            msg.classList.remove('hidden');
+            return;
+          }
+          if (data.teacherName) {
+            const who = document.getElementById('modal-teacher');
+            who.textContent = 'Guro: ' + data.teacherName;
+            who.classList.remove('hidden');
+          }
+
+          const isOpen = data.isOpen !== false;
+          document.getElementById('session-closed').classList.toggle('hidden', isOpen);
+          startForm.classList.toggle('hidden', !isOpen);
+
+          // Rebuild the list only when it changed, so a student's pick is not reset
+          const key = JSON.stringify(data.sections || []);
+          if (key !== sectionsShown) {
+            sectionsShown = key;
+            studentSectionSelect.innerHTML = '<option value="" disabled selected>Pumili ng seksiyon...</option>';
+            (data.sections || []).forEach(sec => {
+              const opt = document.createElement('option');
+              opt.value = sec;
+              opt.textContent = sec;
+              studentSectionSelect.appendChild(opt);
+            });
+          }
+        })
+        .catch(err => console.error('Error fetching sections:', err));
+    }
+
+    loadClass();
+    // Keep checking while the start screen is showing, so it opens/closes when the teacher does
+    sessionPoll = setInterval(() => {
+      if (nameModal.classList.contains('hidden')) { clearInterval(sessionPoll); return; }
+      loadClass();
+    }, 10000);
 
     // --- 4. Synchronous Autoplay on Start Button Click ---
     startForm.addEventListener('submit', (e) => {
@@ -727,6 +775,7 @@
         submissionId: submissionId,
         studentName: currentStudent.name,
         section: currentStudent.section,
+        guro: guro,
         answers: studentAnswers,
         timestamp: new Date().toISOString()
       };

@@ -14,3 +14,8 @@ public/ang_mga_tinig_ng_nakaraan_final.mp4
 public/voice_samples/
 *.wav
 public/video_assets/*.wav
+
+# Teacher codes are secret; never commit them to the public repo
+data/teachers.json
+apps-script/SECRET-NOTES.txt
+data/settings.json
