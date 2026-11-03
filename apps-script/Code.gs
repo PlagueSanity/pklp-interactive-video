@@ -1,4 +1,4 @@
-// PKLP Interactive Video — Google Sheet storage + results webhook
+// Classroom Video Quiz — Google Sheet storage + results webhook
 // I-paste ito sa Extensions → Apps Script ng iyong Google Sheet.
 
 // ===================== DALAWANG LINYA LANG ANG PAPALITAN =====================
@@ -133,7 +133,7 @@ function doPost(e) {
 function doGet() {
   try {
     const ss = getSpreadsheet_();
-    return json_({ ok: true, message: 'PKLP storage is ready!', konektadoSa: ss.getName() });
+    return json_({ ok: true, message: 'Classroom Video Quiz storage is ready!', konektadoSa: ss.getName() });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
   }

@@ -398,7 +398,7 @@ app.post('/api/studio/save-lesson', verifyTeacherPin, requireAdmin, requireSheet
   const updatedLesson = {
     id: lessonData.id || 'pklp-aralin-1',
     title: title.trim(),
-    subject: (subject || 'Baitang 11 - PKLP').trim(),
+    subject: (subject || '').trim(),
     description: (description || 'Panoorin ang aralin at sagutin ang mga katanungan.').trim(),
     videoType: videoType || 'youtube',
     youtubeId: youtubeId.trim(),
@@ -776,7 +776,7 @@ app.get('/api/admin/results', verifyTeacherPin, (req, res) => {
   } catch (err) {
     console.error('Admin results query error:', err.message);
     res.json({
-      lessonTitle: lessonData.title || 'PKLP Lesson',
+      lessonTitle: lessonData.title || 'Aralin',
       totalStudents: 0,
       averageScore: 0,
       totalQuestions: 3,
@@ -824,7 +824,7 @@ if (sheetOn) connectSheet();
 
 app.listen(PORT, () => {
   console.log(`=======================================================`);
-  console.log(`🚀 PKLP Interactive Video Platform (Audit-Compliant)`);
+  console.log(`🚀 Classroom Video Quiz`);
   console.log(`📱 YouTube Runner: http://localhost:${PORT}/play.html`);
   console.log(`📊 Guro Dashboard: http://localhost:${PORT}/admin.html`);
   console.log(`🗂️  Google Sheet:   ${sheetOn ? 'connected storage' : 'not set (local files only)'}`);

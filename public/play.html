@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <title>PKLP Interactive Video Lesson (Grade 11)</title>
+  <title>Classroom Video Quiz</title>
   <style>
     :root {
       --primary: #2563eb;
@@ -519,7 +519,7 @@
       .then(r => r.json())
       .then(data => {
         lessonData = data;
-        document.getElementById('modal-lesson-title').textContent = lessonData.title || 'Aralin sa PKLP';
+        document.getElementById('modal-lesson-title').textContent = lessonData.title || 'Aralin';
         if (lessonData.description) {
           document.getElementById('modal-lesson-desc').textContent = lessonData.description;
         }

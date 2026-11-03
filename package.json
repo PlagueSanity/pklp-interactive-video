@@ -1,7 +1,7 @@
 {
   "name": "pklp-interactive-video",
   "version": "1.0.0",
-  "description": "Interactive Educational Video Prototype for Grade 11 PKLP",
+  "description": "Classroom Video Quiz: interactive video lessons with checkpoint questions",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
