@@ -66,6 +66,27 @@
         <button id="btn-toggle-session" class="btn btn-sm" style="min-width: 190px;">...</button>
       </div>
 
+      <!-- 0b. Results Sheet (each teacher connects their own Google Sheet) -->
+      <div class="dash-card" id="sheet-card">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;">
+          <h2>📄 <span data-i18n="sheetTitle"></span>: <span id="sheet-state"></span></h2>
+          <small id="sheet-status" class="dash-hint"></small>
+        </div>
+        <p class="dash-hint" id="sheet-connected"></p>
+        <div id="sheet-steps" class="hidden">
+          <ol class="dash-hint" style="margin: 8px 0 12px 18px; line-height: 1.7;">
+            <li data-i18n-html="sheetStep1"></li>
+            <li><span data-i18n-html="sheetStep2"></span> <span class="code-pill" id="sheet-owner-email"></span>
+              <button type="button" id="btn-copy-email" class="btn btn-sm" style="padding: 2px 8px; font-size: 0.75rem;" data-i18n="copy"></button></li>
+            <li data-i18n="sheetStep3"></li>
+          </ol>
+          <div class="row">
+            <input type="text" id="input-sheet-url" data-i18n-ph="sheetPlaceholder">
+            <button id="btn-connect-sheet" class="btn btn-sm" data-i18n="sheetConnect"></button>
+          </div>
+        </div>
+      </div>
+
       <!-- 1. Student link -->
       <div class="dash-card">
         <h2>🔗 <span data-i18n="linkTitle"></span></h2>
@@ -102,7 +123,7 @@
             <thead>
               <tr>
                 <th data-i18n="colName"></th><th data-i18n="colCode"></th><th data-i18n="colStudentLink"></th>
-                <th style="text-align: center;" data-i18n="colFinished"></th><th></th>
+                <th style="text-align: center;" data-i18n="colFinished"></th><th style="text-align: center;" data-i18n="colSheet"></th><th></th>
               </tr>
             </thead>
             <tbody id="teachers-tbody"></tbody>

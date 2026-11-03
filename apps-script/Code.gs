@@ -1,11 +1,13 @@
 // Classroom Video Quiz — Google Sheet storage + results webhook
 // I-paste ito sa Extensions → Apps Script ng iyong Google Sheet.
 
-// ===================== DALAWANG LINYA LANG ANG PAPALITAN =====================
+// ===================== TATLONG LINYA LANG ANG PAPALITAN =====================
 // 1. Ang BUONG address ng Google Sheet mo (galing sa address bar).
 const SHEET_URL = 'PASTE_THE_FULL_GOOGLE_SHEET_ADDRESS_HERE';
 // 2. Ang lihim na susi (dapat kapareho ng SHEET_SECRET sa Render).
 const SECRET = 'PASTE_THE_SECRET_KEY_HERE';
+// 3. Ang Gmail na may-ari ng script na ito (dito ise-share ng ibang guro ang kanilang Sheet).
+const OWNER_EMAIL = 'PASTE_YOUR_GMAIL_HERE';
 // ============================================================================
 
 const DATA_TAB = '_Data';       // lesson, sections, settings, teachers (huwag galawin)
@@ -72,7 +74,7 @@ function load_(ss) {
       });
     });
   }
-  return { ok: true, sheetName: ss.getName(), data, results };
+  return { ok: true, sheetName: ss.getName(), ownerEmail: OWNER_EMAIL, data, results };
 }
 
 function setData_(ss, key, value) {
@@ -90,8 +92,38 @@ function addResult_(ss, d) {
   resSh.appendRow([cell_(d.submissionId), d.createdAt ? new Date(d.createdAt) : new Date(), cell_(d.lessonId),
     cell_(d.teacherId), cell_(d.teacherName), cell_(d.studentName), cell_(d.section),
     Number(d.score), Number(d.total), String(d.answers || '{}')]);
-  writeSectionRow_(ss, d);
+
+  // Readable copy: the teacher's own Sheet if they connected one, otherwise the main Sheet's section tabs
+  if (d.teacherSheetUrl) {
+    try {
+      writeSectionRow_(openSheetByUrl_(d.teacherSheetUrl), d);
+      return { ok: true, teacherSheet: true };
+    } catch (err) {
+      return { ok: true, teacherSheet: false, warning: String(err) };
+    }
+  }
+  if (!d.teacherId) writeSectionRow_(ss, d);
   return { ok: true };
+}
+
+function openSheetByUrl_(url) {
+  const m = String(url || '').match(/\/d\/([a-zA-Z0-9_-]{20,})/);
+  if (!m) throw new Error('Not a Google Sheets link');
+  return SpreadsheetApp.openById(m[1]);
+}
+
+// A teacher pasted their Sheet link: check that it is shared with this account and can be written
+function connectSheet_(url) {
+  let ss;
+  try {
+    ss = openSheetByUrl_(url);
+  } catch (err) {
+    return { ok: false, error: 'NO_ACCESS', detail: String(err) };
+  }
+  const sh = tab_(ss, 'PAANO GAMITIN', ['Classroom Video Quiz']);
+  sh.getRange(2, 1).setValue('Dito papasok ang mga resulta ng iyong mga mag-aaral: isang tab bawat seksiyon.');
+  sh.getRange(3, 1).setValue('Huwag tanggalin ang pag-share sa ' + OWNER_EMAIL + ', o hihinto ang pagpasok ng resulta.');
+  return { ok: true, name: ss.getName() };
 }
 
 // Easy-to-read copy: one tab per section (same as the old webhook)
@@ -121,6 +153,7 @@ function doPost(e) {
     if (d.action === 'load') return json_(load_(ss));
     if (d.action === 'setData') return json_(setData_(ss, d.key, d.value));
     if (d.action === 'addResult') return json_(addResult_(ss, d.result || {}));
+    if (d.action === 'connectSheet') return json_(connectSheet_(d.url));
     return json_({ ok: false, error: 'Unknown action' });
   } catch (err) {
     return json_({ ok: false, error: String(err) });

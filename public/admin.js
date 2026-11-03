@@ -66,7 +66,29 @@ const I18N = {
     colScore: 'Iskor',
     colPercent: 'Bahagdan',
     colDate: 'Oras / Petsa',
-    dateLocale: 'fil-PH'
+    dateLocale: 'fil-PH',
+    sheetTitle: 'Google Sheet ng Resulta',
+    sheetOn: '✓ Nakakonekta',
+    sheetOff: '⚠️ Hindi pa nakakonekta',
+    sheetMain: 'Ang mga resulta ng iyong klase ay pumapasok sa pangunahing Google Sheet.',
+    sheetMainOff: '⚠️ Walang nakakonektang Google Sheet ang site na ito (local lamang).',
+    sheetConnectedTo: 'Pumapasok ang mga resulta sa: {name}',
+    sheetOpen: 'Buksan ang Sheet',
+    sheetChange: 'Palitan',
+    sheetStep1: 'Gumawa ng bagong Google Sheet sa <a href="https://sheets.new" target="_blank" rel="noopener">sheets.new</a>.',
+    sheetStep2: 'I-click ang <strong>Share</strong> at idagdag bilang <strong>Editor</strong>:',
+    sheetStep3: 'Kopyahin ang link ng Sheet mula sa address bar at i-paste dito:',
+    sheetPlaceholder: 'https://docs.google.com/spreadsheets/d/...',
+    sheetConnect: '🔗 Ikonekta',
+    sheetChecking: 'Sinusuri ang Sheet...',
+    sheetDone: '✓ Nakakonekta na! Maaari mo nang buksan ang sesyon.',
+    sheetNeeded: 'Ikonekta muna ang iyong Google Sheet ng resulta bago buksan ang sesyon.',
+    colSheet: 'Sheet',
+    err_BAD_LINK: 'Hindi ito link ng Google Sheet. Kopyahin ang buong address na nagsisimula sa https://docs.google.com/spreadsheets/d/',
+    err_NO_ACCESS: 'Hindi mabuksan ang Sheet. Siguraduhing na-share ito bilang Editor sa email sa hakbang 2.',
+    err_CHECK_FAILED: 'Hindi nasuri ang Sheet. Pakisubukang muli.',
+    err_NO_STORAGE: 'Walang nakakonektang Google storage ang site na ito.',
+    err_SHEET_REQUIRED: 'Ikonekta muna ang iyong Google Sheet ng resulta bago buksan ang sesyon.'
   },
   en: {
     loginHint: 'Enter your teacher code.',
@@ -134,7 +156,29 @@ const I18N = {
     colScore: 'Score',
     colPercent: 'Percent',
     colDate: 'Time / Date',
-    dateLocale: 'en-PH'
+    dateLocale: 'en-PH',
+    sheetTitle: 'Results Google Sheet',
+    sheetOn: '✓ Connected',
+    sheetOff: '⚠️ Not connected yet',
+    sheetMain: 'Your class results go to the main Google Sheet.',
+    sheetMainOff: '⚠️ This site has no Google Sheet connected (local only).',
+    sheetConnectedTo: 'Results are saved to: {name}',
+    sheetOpen: 'Open Sheet',
+    sheetChange: 'Change',
+    sheetStep1: 'Create a new Google Sheet at <a href="https://sheets.new" target="_blank" rel="noopener">sheets.new</a>.',
+    sheetStep2: 'Click <strong>Share</strong> and add as <strong>Editor</strong>:',
+    sheetStep3: 'Copy the Sheet link from the address bar and paste it here:',
+    sheetPlaceholder: 'https://docs.google.com/spreadsheets/d/...',
+    sheetConnect: '🔗 Connect',
+    sheetChecking: 'Checking the Sheet...',
+    sheetDone: '✓ Connected! You can open your session now.',
+    sheetNeeded: 'Connect your results Google Sheet before opening the session.',
+    colSheet: 'Sheet',
+    err_BAD_LINK: 'That is not a Google Sheet link. Copy the full address starting with https://docs.google.com/spreadsheets/d/',
+    err_NO_ACCESS: 'Cannot open the Sheet. Make sure it is shared as Editor with the email in step 2.',
+    err_CHECK_FAILED: 'Could not check the Sheet. Please try again.',
+    err_NO_STORAGE: 'This site has no Google storage connected.',
+    err_SHEET_REQUIRED: 'Connect your results Google Sheet before opening the session.'
   }
 };
 
@@ -192,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function serverMsg(message) {
+    if (I18N.fil['err_' + message]) return t('err_' + message);
     return lang === 'en' && SERVER_MESSAGES_EN[message] ? SERVER_MESSAGES_EN[message] : message;
   }
 
@@ -207,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (me) {
       document.getElementById('teacher-name').textContent = me.isAdmin ? t('mainTeacher') : me.name;
       renderSession(me.isOpen);
+      renderSheet();
       renderHead();
       updateSectionFilter(allSubmissions);
       renderTable(allSubmissions);
@@ -278,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         teachersCard.classList.toggle('hidden', !me.isAdmin);
         studentLink.value = linkFor(me.slug);
         renderSession(me.isOpen);
+        renderSheet();
 
         loadResults();
         loadSections();
@@ -302,10 +349,76 @@ document.addEventListener('DOMContentLoaded', () => {
     sessionCard.style.background = isOpen ? '#f0fdf4' : '#fef2f2';
     btnToggleSession.textContent = isOpen ? t('closeSession') : t('openSession');
     btnToggleSession.style.background = isOpen ? 'var(--danger)' : 'var(--success)';
+
+    const needsSheet = !me.isAdmin && !(me.sheet && me.sheet.connected);
+    btnToggleSession.disabled = needsSheet && !isOpen;
+    btnToggleSession.style.opacity = btnToggleSession.disabled ? '0.5' : '1';
+    if (needsSheet && !isOpen) document.getElementById('session-hint').textContent = t('sheetNeeded');
   }
+
+  // --- Results Sheet ---
+  const inputSheetUrl = document.getElementById('input-sheet-url');
+  const btnConnectSheet = document.getElementById('btn-connect-sheet');
+  const sheetStatus = document.getElementById('sheet-status');
+  let changingSheet = false;
+
+  function renderSheet() {
+    const sheet = me.sheet || { connected: false };
+    const connectedEl = document.getElementById('sheet-connected');
+    document.getElementById('sheet-state').textContent = sheet.connected ? t('sheetOn') : t('sheetOff');
+    document.getElementById('sheet-card').style.borderColor = sheet.connected ? '#86efac' : '#fcd34d';
+    document.getElementById('sheet-owner-email').textContent = me.ownerEmail || '—';
+
+    if (me.isAdmin) {
+      connectedEl.textContent = sheet.connected ? t('sheetMain') : t('sheetMainOff');
+      document.getElementById('sheet-steps').classList.add('hidden');
+      return;
+    }
+
+    connectedEl.innerHTML = '';
+    if (sheet.connected) {
+      connectedEl.append(t('sheetConnectedTo', { name: sheet.name || 'Google Sheet' }) + ' · ');
+      const open = document.createElement('a');
+      open.href = sheet.url;
+      open.target = '_blank';
+      open.rel = 'noopener';
+      open.textContent = t('sheetOpen');
+      const change = document.createElement('a');
+      change.href = '#';
+      change.textContent = t('sheetChange');
+      change.addEventListener('click', (e) => { e.preventDefault(); changingSheet = true; renderSheet(); });
+      connectedEl.append(open, ' · ', change);
+    }
+    document.getElementById('sheet-steps').classList.toggle('hidden', sheet.connected && !changingSheet);
+  }
+
+  document.getElementById('btn-copy-email').addEventListener('click', (e) => copyText(me.ownerEmail || '', e.currentTarget));
+
+  btnConnectSheet.addEventListener('click', () => {
+    const url = inputSheetUrl.value.trim();
+    if (!url) return;
+    sheetStatus.textContent = t('sheetChecking');
+    btnConnectSheet.disabled = true;
+    api('/api/admin/results-sheet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    })
+      .then(data => {
+        me.sheet = data.sheet;
+        changingSheet = false;
+        inputSheetUrl.value = '';
+        sheetStatus.textContent = t('sheetDone');
+        renderSheet();
+        renderSession(me.isOpen);
+      })
+      .catch(err => { sheetStatus.textContent = '⚠️ ' + err.message; })
+      .finally(() => { btnConnectSheet.disabled = false; });
+  });
 
   btnToggleSession.addEventListener('click', () => {
     const next = !me.isOpen;
+    if (btnToggleSession.disabled) return;
     btnToggleSession.disabled = true;
     api('/api/admin/session', {
       method: 'POST',
@@ -314,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })
       .then(data => renderSession(data.isOpen))
       .catch(err => { document.getElementById('session-hint').textContent = '⚠️ ' + err.message; })
-      .finally(() => { btnToggleSession.disabled = false; });
+      .finally(() => { renderSession(me.isOpen); });
   });
 
   function linkFor(slug) {
@@ -532,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTeachers(teachers) {
     teachersTbody.innerHTML = '';
     if (teachers.length === 0) {
-      teachersTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 16px;">${t('noTeachers')}</td></tr>`;
+      teachersTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 16px;">${t('noTeachers')}</td></tr>`;
       return;
     }
     teachers.forEach(tc => {
@@ -542,6 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td><span class="code-pill">${escapeHtml(tc.code)}</span></td>
         <td style="font-size: 0.8rem; word-break: break-all;">${escapeHtml(linkFor(tc.slug))}</td>
         <td style="text-align: center;">${tc.students}</td>
+        <td style="text-align: center;">${tc.sheetConnected ? '✓' : '—'}</td>
         <td style="white-space: nowrap;"></td>
       `;
       const actions = tr.lastElementChild;

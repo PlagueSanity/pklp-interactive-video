@@ -115,6 +115,7 @@ const dirtyData = {};        // key -> latest value still to be saved in the She
 const pendingResults = [];   // student results still to be saved in the Sheet
 let flushing = false;
 let retryTimer = null;
+let sheetOwnerEmail = '';    // Gmail that runs the Apps Script; teachers share their Sheet with it
 
 async function sheetCall(action, payload = {}) {
   const r = await fetch(SHEET_API_URL, {
@@ -181,6 +182,7 @@ async function flushSheet() {
 async function loadFromSheet() {
   const res = await sheetCall('load');
   const d = res.data || {};
+  sheetOwnerEmail = res.ownerEmail && res.ownerEmail.indexOf('PASTE_') !== 0 ? res.ownerEmail : '';
 
   if (d.lesson) {
     lessonData = JSON.parse(d.lesson);
@@ -281,7 +283,7 @@ app.get('/api/sections', (req, res) => {
     return res.status(404).json({ error: 'Hindi kilala ang link ng guro. Hingin muli ang tamang link sa iyong guro.' });
   }
   if (teacher.isAdmin) return res.json({ sections: readSections(), teacherName: '', isOpen: readMainSettings().isOpen !== false });
-  res.json({ sections: teacher.sections || [], teacherName: teacher.name, isOpen: teacher.isOpen !== false });
+  res.json({ sections: teacher.sections || [], teacherName: teacher.name, isOpen: teacher.isOpen !== false && !!teacher.resultsSheetUrl });
 });
 
 /**
@@ -314,8 +316,39 @@ app.post('/api/admin/sections', verifyTeacherPin, requireSheetReady, (req, res) 
  */
 app.get('/api/admin/me', verifyTeacherPin, (req, res) => {
   const t = req.teacher;
-  const isOpen = t.isAdmin ? readMainSettings().isOpen !== false : t.isOpen !== false;
-  res.json({ id: t.id, name: t.name, isAdmin: !!t.isAdmin, slug: t.slug || '', isOpen });
+  const sheet = t.isAdmin
+    ? { connected: sheetOn, name: 'main', url: '' }
+    : { connected: !!t.resultsSheetUrl, name: t.resultsSheetName || '', url: t.resultsSheetUrl || '' };
+  const isOpen = t.isAdmin ? readMainSettings().isOpen !== false : t.isOpen !== false && sheet.connected;
+  res.json({ id: t.id, name: t.name, isAdmin: !!t.isAdmin, slug: t.slug || '', isOpen, sheet, ownerEmail: sheetOwnerEmail });
+});
+
+/**
+ * POST /api/admin/results-sheet
+ * A teacher connects their own Google Sheet (shared with the script owner) for their students' results
+ */
+app.post('/api/admin/results-sheet', verifyTeacherPin, requireSheetReady, async (req, res) => {
+  if (req.teacher.isAdmin) return res.status(400).json({ error: 'NOT_NEEDED' });
+  const url = String(req.body.url || '').trim();
+  if (!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[a-zA-Z0-9_-]{20,}/.test(url)) {
+    return res.status(400).json({ error: 'BAD_LINK' });
+  }
+  if (!sheetOn) return res.status(503).json({ error: 'NO_STORAGE' });
+
+  let check;
+  try {
+    check = await sheetCall('connectSheet', { url });
+  } catch (err) {
+    return res.status(400).json({ error: /NO_ACCESS/.test(err.message) ? 'NO_ACCESS' : 'CHECK_FAILED' });
+  }
+
+  const list = readTeachers();
+  const me = list.find(t => t.id === req.teacher.id);
+  if (!me) return res.status(401).json({ error: 'Hindi wasto ang code.' });
+  me.resultsSheetUrl = url.split('#')[0];
+  me.resultsSheetName = String(check.name || '').slice(0, 100);
+  writeTeachers(list);
+  res.json({ success: true, sheet: { connected: true, name: me.resultsSheetName, url: me.resultsSheetUrl } });
 });
 
 /**
@@ -332,6 +365,7 @@ app.post('/api/admin/session', verifyTeacherPin, requireSheetReady, (req, res) =
     const list = readTeachers();
     const me = list.find(t => t.id === req.teacher.id);
     if (!me) return res.status(401).json({ error: 'Hindi wasto ang code.' });
+    if (isOpen && !me.resultsSheetUrl) return res.status(400).json({ error: 'SHEET_REQUIRED' });
     me.isOpen = isOpen;
     writeTeachers(list);
   }
@@ -349,7 +383,7 @@ app.get('/api/admin/teachers', verifyTeacherPin, requireAdmin, (req, res) => {
       .forEach(r => { counts[r.teacher_id] = r.n; });
   } catch (e) {}
   res.json({
-    teachers: readTeachers().map(t => ({ id: t.id, name: t.name, code: t.code, slug: t.slug, students: counts[t.id] || 0 }))
+    teachers: readTeachers().map(t => ({ id: t.id, name: t.name, code: t.code, slug: t.slug, students: counts[t.id] || 0, sheetConnected: !!t.resultsSheetUrl }))
   });
 });
 
@@ -661,6 +695,7 @@ app.post('/api/submissions', async (req, res) => {
     lessonId: lessonData.id,
     teacherId: teacherId || '',
     teacherName: teacher.isAdmin ? '' : teacher.name,
+    teacherSheetUrl: teacher.isAdmin ? '' : (teacher.resultsSheetUrl || ''),
     studentName: studentName.trim(),
     section: section.trim(),
     score,
