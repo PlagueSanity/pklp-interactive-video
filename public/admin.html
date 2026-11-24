@@ -141,7 +141,10 @@
       <div class="dash-card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
           <h2>📊 <span data-i18n="resultsTitle"></span></h2>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button id="btn-export-csv" class="btn btn-sm" style="background: var(--success);" data-i18n="downloadCsv"></button>
+          <button id="btn-clear-records" class="btn btn-sm" style="background:#b42336">Clear records for this ADM</button>
+          </div>
         </div>
 
         <div class="metrics-grid">
@@ -180,5 +183,6 @@
   </div>
 
   <script src="admin.js"></script>
+  <script src="clear-results.js"></script>
 </body>
 </html>

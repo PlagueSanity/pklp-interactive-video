@@ -57,6 +57,20 @@ try {
 const lessonPath = path.join(__dirname, 'data', 'lesson.json');
 let lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
 const lessonsPath = path.join(__dirname, 'data', 'lessons.json');
+const clearedPath = path.join(__dirname, 'data', 'cleared-submissions.json');
+let clearedSubmissionIds = [];
+try { clearedSubmissionIds = JSON.parse(fs.readFileSync(clearedPath, 'utf-8')); } catch (_) {}
+let clearingResults = false;
+db.exec("UPDATE submissions SET submission_id = 'legacy_' || id WHERE submission_id IS NULL");
+db.exec('CREATE TABLE IF NOT EXISTS cleared_submissions (submission_id TEXT PRIMARY KEY)');
+function syncClearedRecords() {
+  const insert = db.prepare('INSERT OR IGNORE INTO cleared_submissions (submission_id) VALUES (?)');
+  db.exec('BEGIN');
+  try { for (const id of clearedSubmissionIds) insert.run(id); db.exec('COMMIT'); }
+  catch (error) { db.exec('ROLLBACK'); throw error; }
+  fs.writeFileSync(clearedPath, JSON.stringify(clearedSubmissionIds));
+}
+syncClearedRecords();
 let extraLessons = {};
 try { extraLessons = JSON.parse(fs.readFileSync(lessonsPath, 'utf-8')); } catch (_) {}
 function allLessons() { return [lessonData, ...Object.values(extraLessons)]; }
@@ -64,7 +78,7 @@ function persistLessons() {
   fs.writeFileSync(lessonsPath, JSON.stringify(extraLessons, null, 2));
   // The existing Apps Script already accepts 'lesson'; keep the ADM library inside
   // that record so deployment does not require changing the Google web app.
-  saveToSheet('lesson', { ...lessonData, admLessons: extraLessons });
+  saveToSheet('lesson', { ...lessonData, admLessons: extraLessons, clearedSubmissionIds });
 }
 
 
@@ -197,11 +211,14 @@ async function loadFromSheet() {
 
   if (d.lesson) {
     lessonData = JSON.parse(d.lesson);
+    clearedSubmissionIds = lessonData.clearedSubmissionIds || clearedSubmissionIds;
+    delete lessonData.clearedSubmissionIds;
+    syncClearedRecords();
     extraLessons = lessonData.admLessons || (d.lessons ? JSON.parse(d.lessons) : extraLessons);
     delete lessonData.admLessons;
     fs.writeFileSync(lessonPath, JSON.stringify(lessonData, null, 2), 'utf-8');
   } else {
-    dirtyData.lesson = { ...lessonData, admLessons: extraLessons };
+    dirtyData.lesson = { ...lessonData, admLessons: extraLessons, clearedSubmissionIds };
   }
   fs.writeFileSync(lessonsPath, JSON.stringify(extraLessons, null, 2));
 
@@ -258,7 +275,7 @@ app.use('/api', (req, res, next) => {
 });
 
 const lessonRoutes = new Set(['/lesson', '/admin/lesson', '/studio/save-lesson',
-  '/checkpoints/verify', '/submissions', '/admin/results', '/admin/export-csv']);
+  '/checkpoints/verify', '/submissions', '/admin/results', '/admin/export-csv', '/admin/clear-results']);
 app.use('/api', (req, res, next) => {
   if (!lessonRoutes.has(req.path)) return next();
   const id = req.body?.lessonId || req.query.lesson;
@@ -408,7 +425,7 @@ app.post('/api/admin/session', verifyTeacherPin, requireSheetReady, (req, res) =
 app.get('/api/admin/teachers', verifyTeacherPin, requireAdmin, (req, res) => {
   const counts = {};
   try {
-    db.prepare('SELECT teacher_id, COUNT(*) AS n FROM submissions WHERE lesson_id = ? GROUP BY teacher_id')
+    db.prepare('SELECT teacher_id, COUNT(*) AS n FROM submissions WHERE lesson_id = ? AND submission_id NOT IN (SELECT submission_id FROM cleared_submissions) GROUP BY teacher_id')
       .all(lessonData.id)
       .forEach(r => { counts[r.teacher_id] = r.n; });
   } catch (e) {}
@@ -453,6 +470,7 @@ app.delete('/api/admin/teachers/:id', verifyTeacherPin, requireAdmin, requireShe
  * Saves lesson configuration from the No-Code Studio
  */
 app.post('/api/studio/save-lesson', verifyTeacherPin, requireAdmin, requireSheetReady, (req, res) => {
+  if (clearingResults) return res.status(503).json({ error: 'Clearing results. Please try saving again in a moment.' });
   const b = req.body;
   const title = typeof b.title === 'string' ? b.title.trim().slice(0, 200) : '';
   const videoType = b.videoType === 'direct' ? 'direct' : 'youtube';
@@ -834,6 +852,7 @@ app.get('/api/admin/results', verifyTeacherPin, (req, res) => {
       SELECT id, student_name, section, score, total_questions, answers_json, created_at
       FROM submissions
       WHERE lesson_id = ? AND ${teacherWhere(req.teacher).sql}
+        AND submission_id NOT IN (SELECT submission_id FROM cleared_submissions)
       ORDER BY id DESC
     `);
 
@@ -878,6 +897,7 @@ app.get('/api/admin/export-csv', verifyTeacherPin, (req, res) => {
     SELECT student_name, section, score, total_questions, answers_json, created_at
     FROM submissions
     WHERE lesson_id = ? AND ${teacherWhere(req.teacher).sql}
+      AND submission_id NOT IN (SELECT submission_id FROM cleared_submissions)
     ORDER BY section ASC, student_name ASC
   `);
 
@@ -903,6 +923,37 @@ app.get('/api/admin/export-csv', verifyTeacherPin, (req, res) => {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="Resulta_${lessonData.id}${fileTag}.csv"`);
   res.send('\uFEFF' + csv);
+});
+
+// Clear the visible result set, retaining the original Google Sheet rows as backup.
+// Persist the exact IDs before hiding anything, so restored rows remain hidden.
+app.post('/api/admin/clear-results', verifyTeacherPin, requireSheetReady, async (req, res) => {
+  if (req.body.confirmation !== 'CLEAR') return res.status(400).json({ error: 'Type CLEAR to confirm.' });
+  if (clearingResults) return res.status(409).json({ error: 'Another clear operation is in progress.' });
+  clearingResults = true;
+  try {
+    const rows = db.prepare(`SELECT submission_id FROM submissions WHERE lesson_id = ?
+      AND ${teacherWhere(req.teacher).sql} AND submission_id IS NOT NULL
+      AND submission_id NOT IN (SELECT submission_id FROM cleared_submissions)`)
+      .all(req.lesson.id, ...teacherWhere(req.teacher).args);
+    if (!rows.length) return res.json({ success: true, cleared: 0 });
+    const nextIds = [...new Set([...clearedSubmissionIds, ...rows.map(r => r.submission_id)])];
+    if (sheetOn) {
+      // Let any existing lesson save finish before writing the clearing metadata.
+      const deadline = Date.now() + 25000;
+      while (flushing && Date.now() < deadline) await new Promise(r => setTimeout(r, 50));
+      if (flushing || dirtyData.lesson) throw new Error('Storage is busy. Please try again shortly.');
+      await sheetCall('setData', { key: 'lesson', value: JSON.stringify({
+        ...lessonData, admLessons: extraLessons, clearedSubmissionIds: nextIds
+      }) });
+    }
+    clearedSubmissionIds = nextIds;
+    syncClearedRecords();
+    res.json({ success: true, cleared: rows.length });
+  } catch (err) {
+    console.error('Clear results failed:', err.message);
+    res.status(503).json({ error: 'Could not save the clear request. Please retry. Your Google Sheet backup is retained.' });
+  } finally { clearingResults = false; }
 });
 
 if (sheetOn) connectSheet();
