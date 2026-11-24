@@ -62,7 +62,9 @@ try { extraLessons = JSON.parse(fs.readFileSync(lessonsPath, 'utf-8')); } catch 
 function allLessons() { return [lessonData, ...Object.values(extraLessons)]; }
 function persistLessons() {
   fs.writeFileSync(lessonsPath, JSON.stringify(extraLessons, null, 2));
-  saveToSheet('lessons', extraLessons);
+  // The existing Apps Script already accepts 'lesson'; keep the ADM library inside
+  // that record so deployment does not require changing the Google web app.
+  saveToSheet('lesson', { ...lessonData, admLessons: extraLessons });
 }
 
 
@@ -195,17 +197,13 @@ async function loadFromSheet() {
 
   if (d.lesson) {
     lessonData = JSON.parse(d.lesson);
+    extraLessons = lessonData.admLessons || (d.lessons ? JSON.parse(d.lessons) : extraLessons);
+    delete lessonData.admLessons;
     fs.writeFileSync(lessonPath, JSON.stringify(lessonData, null, 2), 'utf-8');
   } else {
-    dirtyData.lesson = lessonData; // first run: copy the current lesson into the Sheet
+    dirtyData.lesson = { ...lessonData, admLessons: extraLessons };
   }
-
-  if (d.lessons) {
-    extraLessons = JSON.parse(d.lessons);
-    fs.writeFileSync(lessonsPath, JSON.stringify(extraLessons, null, 2));
-  } else {
-    dirtyData.lessons = extraLessons;
-  }
+  fs.writeFileSync(lessonsPath, JSON.stringify(extraLessons, null, 2));
 
   if (d.mainSettings) {
     fs.writeFileSync(settingsPath, JSON.stringify(JSON.parse(d.mainSettings), null, 2), 'utf-8');
@@ -496,7 +494,7 @@ app.post('/api/studio/save-lesson', verifyTeacherPin, requireAdmin, requireSheet
   if (id === lessonData.id) {
     lessonData = updatedLesson;
     fs.writeFileSync(lessonPath, JSON.stringify(updatedLesson, null, 2));
-    saveToSheet('lesson', updatedLesson);
+    persistLessons();
   } else {
     extraLessons[id] = updatedLesson;
     persistLessons();
