@@ -727,6 +727,42 @@
   "Hindi nai-save ang iyong resulta. Subukang muli.": {
     "en": "Could not save your result. Please retry.",
     "fil": "Hindi nai-save ang iyong resulta. Subukang muli."
+  },
+  "ADM Library · Classroom Video Quiz": {
+    "en": "ADM Library · Classroom Video Quiz",
+    "fil": "Mga ADM · Classroom Video Quiz"
+  },
+  "Theme": {
+    "en": "Theme",
+    "fil": "Tema"
+  },
+  "Light": {
+    "en": "Light",
+    "fil": "Maliwanag"
+  },
+  "Dark": {
+    "en": "Dark",
+    "fil": "Madilim"
+  },
+  "Open": {
+    "en": "Open",
+    "fil": "Bukas"
+  },
+  "Closed": {
+    "en": "Closed",
+    "fil": "Sarado"
+  },
+  "Interface language": {
+    "en": "Interface language",
+    "fil": "Wika ng interface"
+  },
+  "Color theme": {
+    "en": "Color theme",
+    "fil": "Tema ng kulay"
+  },
+  "ADM lessons": {
+    "en": "ADM lessons",
+    "fil": "Mga aralin sa ADM"
   }
 };
   let language = 'en';
@@ -743,14 +779,23 @@
       if (strings[key]) labels.push({node, key});
     }
     const placeholders = [...document.querySelectorAll('[placeholder]')].map(el => ({el, key:el.placeholder}));
+    const ariaLabels = [...document.querySelectorAll('[aria-label]')]
+      .map(el => ({el, key: el.getAttribute('aria-label')}))
+      .filter(({key}) => strings[key]);
     const title = document.title;
     const select = document.createElement('select');
-    select.setAttribute('aria-label', 'Interface language');
-    select.style.cssText = 'width:auto;min-width:110px;margin:8px;padding:8px;font:inherit';
+    select.className = 'teacher-lang-select';
+    select.setAttribute('aria-label', window.teacherText('Interface language'));
     for (const [value, text] of [['en','English'],['fil','Filipino']]) {
       const option = document.createElement('option'); option.value = value; option.textContent = text; select.append(option);
     }
-    document.querySelector('#pin-modal > div, header').prepend(select);
+    const langSlot = document.querySelector('[data-lang-slot]');
+    if (langSlot) {
+      langSlot.append(select);
+    } else {
+      select.style.cssText = 'width:auto;min-width:110px;margin:8px;padding:8px;font:inherit';
+      document.querySelector('#pin-modal > div, header').prepend(select);
+    }
     // Move the same language control into the studio header once sign-in succeeds.
     const studio = document.getElementById('studio-main');
     if (studio) new MutationObserver(() => {
@@ -758,10 +803,12 @@
     }).observe(studio, {attributes:true, attributeFilter:['class']});
     function apply() {
       select.value = language;
+      select.setAttribute('aria-label', window.teacherText('Interface language'));
       document.documentElement.lang = language === 'fil' ? 'tl' : 'en';
       document.title = window.teacherText(title);
       for (const {node,key} of labels) if (node.isConnected) node.textContent = window.teacherText(key);
       for (const {el,key} of placeholders) el.placeholder = window.teacherText(key);
+      for (const {el,key} of ariaLabels) el.setAttribute('aria-label', window.teacherText(key));
       window.dispatchEvent(new Event('teacher-language-change'));
     }
     select.addEventListener('change', () => {
