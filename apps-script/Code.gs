@@ -78,7 +78,7 @@ function load_(ss) {
 }
 
 function setData_(ss, key, value) {
-  if (['lesson', 'mainSections', 'mainSettings', 'teachers'].indexOf(key) < 0) throw new Error('Unknown key: ' + key);
+  if (['lesson', 'lessons', 'mainSections', 'mainSettings', 'teachers'].indexOf(key) < 0) throw new Error('Unknown key: ' + key);
   const sh = tab_(ss, DATA_TAB, ['Key', 'Value (JSON)', 'Updated']);
   const found = findRow_(sh, key);
   const row = found ? found.getRow() : sh.getLastRow() + 1;

@@ -295,7 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnExportCsv.addEventListener('click', () => {
     if (!currentPin) return;
-    window.location.href = `/api/admin/export-csv?pin=${encodeURIComponent(currentPin)}`;
+    const params = new URLSearchParams(location.search);
+    params.set('pin', currentPin);
+    window.location.href = '/api/admin/export-csv?' + params;
   });
 
   btnCopyLink.addEventListener('click', () => copyText(studentLink.value, btnCopyLink));
@@ -315,6 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
     api('/api/admin/me')
       .then(data => {
         me = data;
+        document.getElementById('link-studio').href = '/studio.html' + location.search;
         sessionStorage.setItem('pklp_teacher_pin', pin);
         pinModal.classList.add('hidden');
         adminMain.classList.remove('hidden');
@@ -431,7 +434,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function linkFor(slug) {
-    return location.origin + '/play.html' + (slug ? '?guro=' + encodeURIComponent(slug) : '');
+    const url = new URL('/play.html', location.origin);
+    if (slug) url.searchParams.set('guro', slug);
+    const adm = new URLSearchParams(location.search).get('lesson');
+    if (adm) url.searchParams.set('lesson', adm);
+    return url.href;
   }
 
   function copyText(text, btn) {

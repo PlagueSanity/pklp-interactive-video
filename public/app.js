@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('/api/checkpoints/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      body: JSON.stringify({ lessonId: lesson.id,
         checkpointId: activeCheckpoint,
         selectedOption: selectedOption
       })
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('/api/submissions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      body: JSON.stringify({ lessonId: lesson.id,
         studentName: currentStudent.name,
         section: currentStudent.section,
         answers: studentAnswers

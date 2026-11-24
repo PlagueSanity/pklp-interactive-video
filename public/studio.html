@@ -137,6 +137,7 @@
       flex: 1;
     }
   </style>
+  <script src="/lesson-context.js"></script>
 </head>
 <body>
 
@@ -158,6 +159,7 @@
   <div class="studio-container hidden" id="studio-main">
     <!-- Header -->
     <header class="studio-header">
+        <a href="/adm.html" style="color:#38bdf8">ADM library</a>
       <div>
         <h1 style="font-size: 1.15rem; color: #fff;">🎬 Guro Studio: No-Code Interactive Video Creator</h1>
         <small style="color: #94a3b8;">Gumawa at mag-edit ng mga interactive na aralin nang walang coding</small>
@@ -179,7 +181,11 @@
           <label>Asignatura at Baitang:</label>
           <input type="text" id="lesson-subject" placeholder="Halimbawa: Baitang 11 - Araling Panlipunan">
 
-          <label>YouTube Video Link o Video ID:</label>
+          <label for="lesson-video-type">Video source</label>
+            <select id="lesson-video-type"><option value="youtube">YouTube</option><option value="direct">MP4 link</option></select>
+            <label for="lesson-direct-url">MP4 URL (for MP4 source)</label>
+            <input id="lesson-direct-url" type="text" placeholder="https://…/lesson.mp4 or /lesson.mp4">
+            <label>YouTube Video Link o Video ID:</label>
           <div style="display: flex; gap: 8px;">
             <input type="text" id="lesson-youtube-url" placeholder="https://www.youtube.com/watch?v=jNQXAC9IVRw o jNQXAC9IVRw">
             <button id="btn-load-video" class="btn-small" style="background: #38bdf8; color: #0f172a; font-weight: 700; height: 42px; width: 100px;">I-load</button>
@@ -194,7 +200,7 @@
         <div class="section-box">
           <div class="section-title"><span>📺</span> 2. Video Timeline at Scrubber</div>
           <div class="video-preview-box">
-            <div id="studio-yt-player"></div>
+            <video id="studio-mp4-player" controls playsinline style="width:100%;height:100%;display:none"></video><div id="studio-yt-player"></div>
           </div>
 
           <div class="timeline-bar">

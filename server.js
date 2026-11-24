@@ -56,6 +56,15 @@ try {
 // Load Lesson Data
 const lessonPath = path.join(__dirname, 'data', 'lesson.json');
 let lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
+const lessonsPath = path.join(__dirname, 'data', 'lessons.json');
+let extraLessons = {};
+try { extraLessons = JSON.parse(fs.readFileSync(lessonsPath, 'utf-8')); } catch (_) {}
+function allLessons() { return [lessonData, ...Object.values(extraLessons)]; }
+function persistLessons() {
+  fs.writeFileSync(lessonsPath, JSON.stringify(extraLessons, null, 2));
+  saveToSheet('lessons', extraLessons);
+}
+
 
 // Load Section List (teacher-editable from the dashboard; students pick from it)
 const sectionsPath = path.join(__dirname, 'data', 'sections.json');
@@ -191,6 +200,13 @@ async function loadFromSheet() {
     dirtyData.lesson = lessonData; // first run: copy the current lesson into the Sheet
   }
 
+  if (d.lessons) {
+    extraLessons = JSON.parse(d.lessons);
+    fs.writeFileSync(lessonsPath, JSON.stringify(extraLessons, null, 2));
+  } else {
+    dirtyData.lessons = extraLessons;
+  }
+
   if (d.mainSettings) {
     fs.writeFileSync(settingsPath, JSON.stringify(JSON.parse(d.mainSettings), null, 2), 'utf-8');
   } else {
@@ -241,6 +257,22 @@ function connectSheet() {
 app.use('/api', (req, res, next) => {
   if (sheetReady) return next();
   Promise.race([sheetReadyPromise, new Promise(r => setTimeout(r, 25000))]).then(() => next());
+});
+
+const lessonRoutes = new Set(['/lesson', '/admin/lesson', '/studio/save-lesson',
+  '/checkpoints/verify', '/submissions', '/admin/results', '/admin/export-csv']);
+app.use('/api', (req, res, next) => {
+  if (!lessonRoutes.has(req.path)) return next();
+  const id = req.body?.lessonId || req.query.lesson;
+  req.lesson = id ? allLessons().find(l => l.id === id) : lessonData;
+  if (!req.lesson) return res.status(404).json({ error: 'ADM lesson not found. Check your lesson link.' });
+  next();
+});
+
+app.get('/api/admin/lessons', verifyTeacherPin, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ lessons: allLessons().map(l => ({ id: l.id, title: l.title, subject: l.subject,
+    questions: l.checkpoints.length, isDefault: l.id === lessonData.id })) });
 });
 
 // Changes are refused until the Sheet has loaded, so old data never overwrites the Sheet
@@ -423,40 +455,53 @@ app.delete('/api/admin/teachers/:id', verifyTeacherPin, requireAdmin, requireShe
  * Saves lesson configuration from the No-Code Studio
  */
 app.post('/api/studio/save-lesson', verifyTeacherPin, requireAdmin, requireSheetReady, (req, res) => {
-  const { title, subject, description, videoType, youtubeId, sheetWebhookUrl, checkpoints } = req.body;
-
-  if (!title || !youtubeId || !checkpoints || !checkpoints.length) {
-    return res.status(400).json({ error: 'Pamagat, YouTube ID, at hindi bababa sa isang checkpoint ang kinakailangan.' });
+  const b = req.body;
+  const title = typeof b.title === 'string' ? b.title.trim().slice(0, 200) : '';
+  const videoType = b.videoType === 'direct' ? 'direct' : 'youtube';
+  const youtubeId = typeof b.youtubeId === 'string' ? b.youtubeId.trim() : '';
+  const videoUrl = typeof b.videoUrl === 'string' ? b.videoUrl.trim() : '';
+  if (!title || (videoType === 'youtube' ? !/^[\w-]{11}$/.test(youtubeId)
+    : !/^(https?:\/\/|\/(?!\/))/.test(videoUrl))) {
+    return res.status(400).json({ error: 'Enter a title and a valid YouTube link or MP4 URL.' });
   }
-
-  const updatedLesson = {
-    id: lessonData.id || 'pklp-aralin-1',
-    title: title.trim(),
-    subject: (subject || '').trim(),
-    description: (description || 'Panoorin ang aralin at sagutin ang mga katanungan.').trim(),
-    videoType: videoType || 'youtube',
-    youtubeId: youtubeId.trim(),
-    sheetWebhookUrl: (sheetWebhookUrl || '').trim(),
-    checkpoints: checkpoints.map((cp, idx) => ({
-      id: cp.id || `cp${idx + 1}`,
-      t: Number(cp.t || cp.timestamp || 0),
-      question: cp.question.trim(),
-      options: cp.options,
-      correctAnswer: cp.correctAnswer,
-      feedbackCorrect: cp.feedbackCorrect || 'Magaling! Tumpak ang iyong sagot.',
-      feedbackIncorrect: cp.feedbackIncorrect || 'Maling sagot. Pakisuri muli ang konsepto sa aralin.'
-    }))
-  };
-
-  fs.writeFileSync(lessonPath, JSON.stringify(updatedLesson, null, 2), 'utf-8');
-  lessonData = updatedLesson;
-  saveToSheet('lesson', updatedLesson);
-
-  res.json({
-    success: true,
-    message: 'Matagumpay na na-save ang aralin!',
-    lesson: updatedLesson
-  });
+  if (!Array.isArray(b.checkpoints) || !b.checkpoints.length || b.checkpoints.length > 100) {
+    return res.status(400).json({ error: 'Add between 1 and 100 questions.' });
+  }
+  const ids = new Set();
+  const checkpoints = [];
+  for (let i = 0; i < b.checkpoints.length; i++) {
+    const cp = b.checkpoints[i];
+    const id = cp?.id || `cp${i + 1}`;
+    const t = Number(cp?.t ?? cp?.timestamp ?? 0);
+    const options = Array.isArray(cp?.options) ? cp.options : Object.entries(cp?.options || {}).map(([id,text]) => ({id,text}));
+    if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(id) || ids.has(id)
+      || !Number.isFinite(t) || t < 0 || typeof cp.question !== 'string' || !cp.question.trim()
+      || !['A','B','C','D'].includes(cp.correctAnswer)
+      || options.length < 2 || options.length > 4
+      || new Set(options.map(o => o.id)).size !== options.length
+      || !options.every(o => ['A','B','C','D'].includes(o.id) && typeof o.text === 'string' && o.text.trim())
+      || !options.some(o => o.id === cp.correctAnswer)) {
+      return res.status(400).json({ error: `Check question ${i + 1}: time, choices, and correct answer are required.` });
+    }
+    ids.add(id);
+    checkpoints.push({ id, t, question: cp.question.trim(), options,
+      correctAnswer: cp.correctAnswer, feedbackCorrect: cp.feedbackCorrect || 'Correct!',
+      feedbackIncorrect: cp.feedbackIncorrect || 'Review this part of the lesson.' });
+  }
+  const id = b.createNew ? 'adm-' + crypto.randomUUID() : req.lesson.id;
+  const updatedLesson = { ...req.lesson, id, title, subject: String(b.subject || '').trim(),
+    description: String(b.description || 'Watch the video and answer the checkpoint questions.').trim(),
+    videoType, youtubeId: videoType === 'youtube' ? youtubeId : '', videoUrl: videoType === 'direct' ? videoUrl : '',
+    sheetWebhookUrl: String(b.sheetWebhookUrl || '').trim(), checkpoints };
+  if (id === lessonData.id) {
+    lessonData = updatedLesson;
+    fs.writeFileSync(lessonPath, JSON.stringify(updatedLesson, null, 2));
+    saveToSheet('lesson', updatedLesson);
+  } else {
+    extraLessons[id] = updatedLesson;
+    persistLessons();
+  }
+  res.json({ success: true, lesson: updatedLesson });
 });
 
 /**
@@ -464,10 +509,9 @@ app.post('/api/studio/save-lesson', verifyTeacherPin, requireAdmin, requireSheet
  * Returns full lesson with answer keys (Teacher only)
  */
 app.get('/api/admin/lesson', verifyTeacherPin, requireAdmin, (req, res) => {
+  const lessonData = req.lesson;
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-  try {
-    lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
-  } catch (e) {}
+
   res.json(lessonData);
 });
 
@@ -564,16 +608,15 @@ app.get('/', (req, res) => {
  * Returns sanitized lesson data without answer keys (Anti-tamper)
  */
 app.get('/api/lesson', (req, res) => {
+  const lessonData = req.lesson;
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   // Re-read fresh from disk in case updated by studio
-  try {
-    lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
-  } catch (e) {}
+
 
   const sanitizedCheckpoints = lessonData.checkpoints.map(cp => ({
     id: cp.id,
-    timestamp: cp.t || cp.timestamp,
-    t: cp.t || cp.timestamp,
+    timestamp: cp.t ?? cp.timestamp ?? 0,
+    t: cp.t ?? cp.timestamp ?? 0,
     question: cp.question,
     options: cp.options
   }));
@@ -595,6 +638,7 @@ app.get('/api/lesson', (req, res) => {
  * Server-side evaluation of student answers
  */
 app.post('/api/checkpoints/verify', (req, res) => {
+  const lessonData = req.lesson;
   const { checkpointId, selectedOption } = req.body;
   if (!checkpointId || !selectedOption) {
     return res.status(400).json({ error: 'Missing checkpointId or selectedOption' });
@@ -619,6 +663,7 @@ app.post('/api/checkpoints/verify', (req, res) => {
  * Saves student results with deduplication and dispatches to Google Sheet Webhook if configured
  */
 app.post('/api/submissions', async (req, res) => {
+  const lessonData = req.lesson;
   const { submissionId, studentName, section, answers, guro } = req.body;
 
   if (!studentName || !section || !answers) {
@@ -626,16 +671,18 @@ app.post('/api/submissions', async (req, res) => {
   }
 
   // Always re-read fresh lesson configuration from disk
-  try {
-    lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
-  } catch (e) {}
+
 
   const subId = submissionId || ('sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
 
   // Deduplication check
   try {
-    const existing = db.prepare('SELECT id, score, total_questions FROM submissions WHERE submission_id = ?').get(subId);
+    const existing = db.prepare('SELECT id, lesson_id, teacher_id, score, total_questions FROM submissions WHERE submission_id = ?').get(subId);
     if (existing) {
+      const owner = teacherFromLink(guro) || MAIN_TEACHER;
+      if (existing.lesson_id !== lessonData.id || (existing.teacher_id || null) !== (owner.isAdmin ? null : owner.id)) {
+        return res.status(409).json({ error: 'Submission belongs to another ADM.' });
+      }
       return res.json({
         success: true,
         score: existing.score,
@@ -686,6 +733,7 @@ app.post('/api/submissions', async (req, res) => {
     );
   } catch (dbErr) {
     console.error('Database write error:', dbErr.message);
+    return res.status(500).json({ error: 'Could not save your result. Please retry.' });
   }
 
   // 2. Permanent copy in the Google Sheet (also fills the per-section tabs)
@@ -782,6 +830,7 @@ function teacherWhere(teacher) {
  * GET /api/admin/results
  */
 app.get('/api/admin/results', verifyTeacherPin, (req, res) => {
+  const lessonData = req.lesson;
   try {
     const query = db.prepare(`
       SELECT id, student_name, section, score, total_questions, answers_json, created_at
@@ -826,6 +875,7 @@ app.get('/api/admin/results', verifyTeacherPin, (req, res) => {
  * GET /api/admin/export-csv
  */
 app.get('/api/admin/export-csv', verifyTeacherPin, (req, res) => {
+  const lessonData = req.lesson;
   const query = db.prepare(`
     SELECT student_name, section, score, total_questions, answers_json, created_at
     FROM submissions
@@ -836,18 +886,20 @@ app.get('/api/admin/export-csv', verifyTeacherPin, (req, res) => {
   const rows = query.all(lessonData.id, ...teacherWhere(req.teacher).args);
   const cpIds = (lessonData.checkpoints || []).map(cp => cp.id);
 
-  let csv = 'Pangalan ng Mag-aaral,Seksiyon,Iskor,Kabuuang Aytem,Bahagdan (%),'
-    + cpIds.map((id, i) => `Q${i + 1} Tumpak?`).join(',') + ',Petsa ng Pagpasa\n';
-
-  rows.forEach(r => {
-    const answers = JSON.parse(r.answers_json);
-    const marks = cpIds.map(id => (answers[id]?.correct ? 'OO' : 'HINDI')).join(',');
-    const percent = Math.round((r.score / r.total_questions) * 100);
-    const cleanName = `"${r.student_name.replace(/"/g, '""')}"`;
-    const cleanSection = `"${r.section.replace(/"/g, '""')}"`;
-
-    csv += `${cleanName},${cleanSection},${r.score},${r.total_questions},${percent}%,${marks},${r.created_at}\n`;
+  const cell = v => {
+    let value = String(v ?? '');
+    if (/^[\s]*[=+@-]/.test(value)) value = "'" + value;
+    return '"' + value.replace(/"/g, '""') + '"';
+  };
+  const header = ['ADM', 'Student Name', 'Section', 'Score', 'Total Questions', 'Percent',
+    ...cpIds.flatMap((_, i) => [`Q${i+1} Answer`, `Q${i+1} Correct`]), 'Submitted At (UTC)'];
+  const records = rows.map(r => {
+    const answers = JSON.parse(r.answers_json || '{}');
+    return [lessonData.title, r.student_name, r.section, r.score, r.total_questions,
+      r.total_questions ? Math.round(r.score / r.total_questions * 100) : 0,
+      ...cpIds.flatMap(id => [answers[id]?.selected || '', answers[id]?.correct ? 'YES' : 'NO']), r.created_at];
   });
+  const csv = [header, ...records].map(row => row.map(cell).join(',')).join('\r\n');
 
   const fileTag = req.teacher.isAdmin ? '' : '_' + req.teacher.slug;
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');

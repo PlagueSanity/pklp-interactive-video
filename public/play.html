@@ -290,6 +290,7 @@
       display: none !important;
     }
   </style>
+  <script src="/lesson-context.js"></script>
 </head>
 <body>
 
@@ -517,7 +518,7 @@
 
     // --- 3. Fetch Fresh Lesson Data (Zero-Cache) ---
     fetch('/api/lesson?_t=' + Date.now(), { cache: 'no-store' })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('Unable to load this ADM'); return r.json(); })
       .then(data => {
         lessonData = data;
         document.getElementById('modal-lesson-title').textContent = lessonData.title || 'Aralin';
@@ -534,7 +535,7 @@
 
         setupPlayer();
       })
-      .catch(err => console.error('Error fetching lesson:', err));
+      .catch(err => { document.getElementById('modal-lesson-title').textContent = 'ADM not found. Ask your teacher for the correct link.'; document.getElementById('btn-start')?.setAttribute('disabled', ''); });
 
     // Section choices and open/closed state come from the teacher's dashboard
     let sectionsShown = '';
@@ -796,6 +797,7 @@
 
       const payload = {
         submissionId: submissionId,
+          lessonId: lessonData.id,
         studentName: currentStudent.name,
         section: currentStudent.section,
         guro: guro,
@@ -817,7 +819,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('Result not saved'); return r.json(); })
       .then(data => {
         document.getElementById('final-score-display').textContent = `${data.score} / ${data.total}`;
         localStorage.removeItem('pklp_pending_' + payload.submissionId);

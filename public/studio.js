@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+  let createNew = new URLSearchParams(location.search).get('new') === '1';
   let currentPin = sessionStorage.getItem('pklp_teacher_pin') || '';
   let studioPlayer = null;
+  let youtubePlayer = null;
   let checkpoints = [];
   let pollTimer = null;
 
@@ -65,7 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
         studioMain.classList.remove('hidden');
 
         // Load existing lesson into form
-        loadExistingLesson();
+        if (createNew) { lessonTitle.value = ''; lessonYoutubeUrl.value = ''; checkpoints = []; renderCheckpointsList(); }
+        else loadExistingLesson();
       })
       .catch(() => {
         pinError.classList.remove('hidden');
@@ -81,6 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
     })
       .then(r => r.json())
       .then(lesson => {
+        document.getElementById('lesson-video-type').value = lesson.videoType || 'youtube';
+        document.getElementById('lesson-direct-url').value = lesson.videoUrl || '';
         lessonTitle.value = lesson.title || '';
         lessonSubject.value = lesson.subject || '';
         lessonYoutubeUrl.value = lesson.youtubeId || 'jNQXAC9IVRw';
@@ -97,14 +102,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
 
         renderCheckpointsList();
-        initStudioYouTube(lesson.youtubeId || 'jNQXAC9IVRw');
+        if (lesson.videoType === 'direct') loadDirectVideo();
+        else initStudioYouTube(lesson.youtubeId || 'jNQXAC9IVRw');
       })
       .catch(err => console.error(err));
   }
 
   // 3. YouTube Preview Player
   function extractYouTubeId(url) {
-    if (!url) return 'jNQXAC9IVRw';
+    if (!url) return '';
     const clean = url.trim();
     if (clean.length === 11 && !clean.includes('/') && !clean.includes('?')) return clean;
     const match = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([\w-]{11})/);
@@ -119,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   function initStudioYouTube(videoIdentifier) {
+    if (document.getElementById('lesson-video-type').value === 'direct') return;
     const videoId = extractYouTubeId(videoIdentifier);
     if (!window.YT || !window.YT.Player) {
       // Retry in 300ms if API not ready yet
@@ -126,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (youtubePlayer) studioPlayer = youtubePlayer;
     if (studioPlayer && typeof studioPlayer.loadVideoById === 'function') {
       studioPlayer.loadVideoById(videoId);
       return;
@@ -146,9 +154,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+    youtubePlayer = studioPlayer;
   }
 
+  function loadDirectVideo() {
+    const v = document.getElementById('studio-mp4-player');
+    if (studioPlayer?.pauseVideo) studioPlayer.pauseVideo();
+    document.getElementById('studio-yt-player').style.display = 'none';
+    v.style.display = 'block';
+    v.src = document.getElementById('lesson-direct-url').value.trim();
+    studioPlayer = { getCurrentTime: () => v.currentTime, pauseVideo: () => v.pause() };
+    if (!pollTimer) pollTimer = setInterval(updateStudioClock, 250);
+  }
   btnLoadVideo.addEventListener('click', () => {
+    if (document.getElementById('lesson-video-type').value === 'direct') return loadDirectVideo();
+    document.getElementById('studio-mp4-player').pause();
+    document.getElementById('studio-mp4-player').style.display = 'none';
+    document.getElementById('studio-yt-player').style.display = 'block';
     const raw = lessonYoutubeUrl.value.trim();
     const id = extractYouTubeId(raw);
     lessonYoutubeUrl.value = id;
@@ -270,7 +292,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const ytid = extractYouTubeId(lessonYoutubeUrl.value);
     const sheetUrl = lessonSheetUrl.value.trim();
 
-    if (!title || !ytid || checkpoints.length === 0) {
+    const videoType = document.getElementById('lesson-video-type').value;
+    const videoUrl = document.getElementById('lesson-direct-url').value.trim();
+    if (!title || !(videoType === 'direct' ? videoUrl : ytid) || checkpoints.length === 0) {
       alert('Pakitiyak na may Pamagat, valid YouTube ID, at hindi bababa sa 1 checkpoint.');
       return;
     }
@@ -287,7 +311,9 @@ document.addEventListener('DOMContentLoaded', () => {
       body: JSON.stringify({
         title,
         subject,
-        videoType: 'youtube',
+        createNew,
+        videoType,
+        videoUrl,
         youtubeId: ytid,
         sheetWebhookUrl: sheetUrl,
         checkpoints
@@ -302,7 +328,9 @@ document.addEventListener('DOMContentLoaded', () => {
       btnPublishAll.textContent = '🚀 I-SAVE AT I-PUBLISH ANG BUONG ARALIN';
 
       publishSuccessBox.classList.remove('hidden');
-      const fullUrl = window.location.origin + '/play.html';
+      createNew = false;
+      history.replaceState(null, '', '/studio.html?lesson=' + encodeURIComponent(data.lesson.id));
+      const fullUrl = window.location.origin + '/play.html?lesson=' + encodeURIComponent(data.lesson.id);
       shareableStudentLink.value = fullUrl;
       shareableStudentLink.focus();
       shareableStudentLink.select();
