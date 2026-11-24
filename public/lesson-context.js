@@ -1,6 +1,7 @@
 (() => {
   const scoped = new Set(['/api/lesson','/api/admin/lesson','/api/admin/results','/api/admin/export-csv',
-    '/api/studio/save-lesson','/api/checkpoints/verify']);
+    '/api/studio/save-lesson','/api/checkpoints/verify','/api/sections',
+    '/api/admin/me','/api/admin/session','/api/admin/duplicate-lesson','/api/admin/teachers']);
   const original = window.fetch.bind(window);
   window.fetch = (input, init) => {
     if (typeof input === 'string') {

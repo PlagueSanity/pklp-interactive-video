@@ -1,6 +1,16 @@
 // Dashboard text in both languages (switch with the EN / FIL buttons)
 const I18N = {
   fil: {
+    dashboardTitle: "Dashboard ng Guro",
+    admLibrary: "Mga ADM",
+    myAdms: "Aking mga sesyon ng ADM",
+    admHint: "Bawat tab ay may sariling bidyo, link ng mag-aaral, sesyon, at mga resulta.",
+    newAdm: "Bagong ADM",
+    duplicateAdm: "Kopyahin ang ADM",
+    copyAdmTitle: "Pamagat ng kopyang ADM:",
+    admLoadError: "Hindi ma-load ang mga ADM. I-refresh upang subukang muli.",
+    admCopying: "Kinokopya ang ADM…",
+    clearRecords: "Burahin ang mga tala para sa ADM na ito",
     loginHint: 'Ilagay ang iyong code ng guro.',
     loginPlaceholder: 'Halimbawa: SANTOS-7K2Q',
     loginButton: 'Pumasok',
@@ -91,6 +101,16 @@ const I18N = {
     err_SHEET_REQUIRED: 'Ikonekta muna ang iyong Google Sheet ng resulta bago buksan ang sesyon.'
   },
   en: {
+    dashboardTitle: "Teacher Dashboard",
+    admLibrary: "ADM library",
+    myAdms: "My ADM sessions",
+    admHint: "Each tab has its own video, student link, session switch, and results.",
+    newAdm: "New ADM",
+    duplicateAdm: "Duplicate ADM",
+    copyAdmTitle: "Title for the copied ADM:",
+    admLoadError: "Could not load ADM sessions. Refresh to try again.",
+    admCopying: "Copying ADM…",
+    clearRecords: "Clear records for this ADM",
     loginHint: 'Enter your teacher code.',
     loginPlaceholder: 'Example: SANTOS-7K2Q',
     loginButton: 'Sign in',
@@ -198,8 +218,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let checkpointIds = [];
   let sectionChoices = [];
   let teacherList = [];
-  let lang = 'fil';
-  try { lang = localStorage.getItem('pklp_dashboard_lang') === 'en' ? 'en' : 'fil'; } catch (e) {}
+  let lang = 'en';
+  try { lang = localStorage.getItem('pklp_dashboard_lang') === 'fil' ? 'fil' : 'en'; } catch (e) {}
+  let admLessons = [];
 
   const PASS_PERCENT = 75;
 
@@ -237,11 +258,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function serverMsg(message) {
     if (I18N.fil['err_' + message]) return t('err_' + message);
+    if (lang === 'en' && /^Nasa listahan na si /.test(message)) return message.replace('Nasa listahan na si ', 'Teacher already exists: ');
     return lang === 'en' && SERVER_MESSAGES_EN[message] ? SERVER_MESSAGES_EN[message] : message;
   }
 
   function applyLang() {
     document.documentElement.lang = lang === 'en' ? 'en' : 'tl';
+    document.title = t('dashboardTitle') + ' - Classroom Video Quiz';
+    renderAdmTabs();
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
     document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
@@ -285,6 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnRefresh.addEventListener('click', () => {
     loadResults();
+    loadAdmTabs();
+    api('/api/admin/me').then(data => { me = data; renderSession(me.isOpen); }).catch(() => {});
     if (me && me.isAdmin) loadTeachers();
   });
 
@@ -329,6 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSession(me.isOpen);
         renderSheet();
 
+        loadAdmTabs();
         loadResults();
         loadSections();
         if (me.isAdmin) loadTeachers();
@@ -339,6 +366,46 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.removeItem('pklp_teacher_pin');
       });
   }
+
+  async function loadAdmTabs() {
+    try {
+      admLessons = (await api('/api/admin/lessons')).lessons;
+      renderAdmTabs();
+    } catch (_) { document.getElementById('adm-status').textContent = t('admLoadError'); }
+  }
+
+  function renderAdmTabs() {
+    const nav = document.getElementById('adm-tabs');
+    nav.replaceChildren();
+    const selected = new URLSearchParams(location.search).get('lesson');
+    for (const lesson of admLessons) {
+      const tab = document.createElement('a');
+      tab.className = 'adm-tab';
+      tab.href = '/admin.html?lesson=' + encodeURIComponent(lesson.id);
+      tab.textContent = lesson.title;
+      if (selected === lesson.id || (!selected && lesson.isDefault)) tab.setAttribute('aria-current', 'page');
+      const state = document.createElement('small');
+      state.textContent = lesson.isOpen ? t('sessionOpen') : t('sessionClosed');
+      tab.append(state); nav.append(tab);
+    }
+    document.getElementById('adm-actions').classList.toggle('hidden', !me?.isAdmin);
+  }
+
+  document.getElementById('btn-duplicate-adm').addEventListener('click', async (e) => {
+    const name = prompt(t('copyAdmTitle'), document.getElementById('admin-lesson-title').textContent + ' (copy)');
+    if (!name?.trim()) return;
+    e.currentTarget.disabled = true;
+    document.getElementById('adm-status').textContent = t('admCopying');
+    try {
+      const data = await api('/api/admin/duplicate-lesson', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: name })
+      });
+      location.href = '/studio.html?lesson=' + encodeURIComponent(data.lesson.id);
+    } catch (err) {
+      document.getElementById('adm-status').textContent = err.message;
+      document.getElementById('btn-duplicate-adm').disabled = false;
+    }
+  });
 
   // --- Session open/close ---
   const btnToggleSession = document.getElementById('btn-toggle-session');
@@ -428,9 +495,11 @@ document.addEventListener('DOMContentLoaded', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isOpen: next })
     })
-      .then(data => renderSession(data.isOpen))
-      .catch(err => { document.getElementById('session-hint').textContent = '⚠️ ' + err.message; })
-      .finally(() => { renderSession(me.isOpen); });
+      .then(data => { renderSession(data.isOpen); loadAdmTabs(); })
+      .catch(err => {
+        renderSession(me.isOpen);
+        document.getElementById('session-hint').textContent = '⚠️ ' + err.message;
+      });
   });
 
   function linkFor(slug) {

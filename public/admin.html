@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html lang="tl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Guro Dashboard - Classroom Video Quiz</title>
+  <title>Teacher Dashboard - Classroom Video Quiz</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    .adm-tabs { display:flex; gap:8px; overflow-x:auto; padding:14px 0; margin-bottom:8px; }
+    .adm-tab { flex:0 0 auto; max-width:300px; padding:12px 16px; border:1px solid #94a3b8; border-radius:8px; background:#f8fafc; color:#334155; font:inherit; cursor:pointer; text-decoration:none; }
+    .adm-tab[aria-current="page"] { background:#075985; border-color:#075985; color:white; }
+    .adm-tab:focus-visible { outline:3px solid #0284c7; outline-offset:2px; }
+    .adm-tab small { display:block; margin-top:4px; }
     .dash-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 18px; margin-bottom: 18px; }
     .dash-card h2 { font-size: 0.95rem; margin: 0 0 4px; }
     .dash-hint { color: var(--text-muted); font-size: 0.8rem; }
@@ -26,7 +31,7 @@
   <div id="pin-modal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 100;">
     <div style="background: #fff; padding: 24px; border-radius: 12px; width: 100%; max-width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <h3 style="font-size: 1.1rem; margin: 0;">🔒 Guro Dashboard</h3>
+        <h3 style="font-size: 1.1rem; margin: 0;">🔒 <span data-i18n="dashboardTitle">Teacher Dashboard</span></h3>
         <div class="lang-switch" style="color: #334155;">
           <button type="button" data-lang="en">EN</button><button type="button" data-lang="fil">FIL</button>
         </div>
@@ -48,7 +53,7 @@
         <div class="lang-switch" style="color: #fff;">
           <button type="button" data-lang="en">EN</button><button type="button" data-lang="fil">FIL</button>
         </div>
-        <a href="/adm.html" class="btn" style="width:auto">ADM library</a>
+        <a href="/adm.html" class="btn" style="width:auto" data-i18n="admLibrary">ADM library</a>
         <a href="/studio.html" id="link-studio" class="btn hidden" style="width: auto; padding: 6px 14px; font-size: 0.8rem; background: #38bdf8; color: #0f172a; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center;">
           🎬 <span data-i18n="studio"></span>
         </a>
@@ -58,6 +63,17 @@
     </header>
 
     <div class="card-content" style="padding: 24px;">
+
+      <section class="dash-card" aria-labelledby="adm-tabs-heading">
+        <h2 id="adm-tabs-heading" data-i18n="myAdms">My ADM sessions</h2>
+        <p class="dash-hint" data-i18n="admHint">Each tab has its own video, student link, session switch, and results.</p>
+        <nav id="adm-tabs" class="adm-tabs" aria-label="ADM sessions"></nav>
+        <div class="row hidden" id="adm-actions">
+          <a class="btn btn-sm" href="/studio.html?new=1" data-i18n="newAdm">New ADM</a>
+          <button type="button" id="btn-duplicate-adm" class="btn btn-sm" data-i18n="duplicateAdm">Duplicate ADM</button>
+        </div>
+        <p id="adm-status" class="dash-hint" role="status" aria-live="polite"></p>
+      </section>
 
       <!-- 0. Session open/close -->
       <div class="dash-card" id="session-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
@@ -143,7 +159,7 @@
           <h2>📊 <span data-i18n="resultsTitle"></span></h2>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button id="btn-export-csv" class="btn btn-sm" style="background: var(--success);" data-i18n="downloadCsv"></button>
-          <button id="btn-clear-records" class="btn btn-sm" style="background:#b42336">Clear records for this ADM</button>
+          <button id="btn-clear-records" class="btn btn-sm" style="background:#b42336" data-i18n="clearRecords">Clear records for this ADM</button>
           </div>
         </div>
 

@@ -1,4 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
+  function updateLessonLinks() {
+    const query = location.search;
+    document.getElementById('studio-dashboard-link').href = '/admin.html' + query;
+    document.getElementById('studio-player-link').href = '/play.html' + query;
+  }
+  updateLessonLinks();
+  const ui = text => window.teacherText(text);
+  window.addEventListener('teacher-language-change', () => renderCheckpointsList());
   let createNew = new URLSearchParams(location.search).get('new') === '1';
   let currentPin = sessionStorage.getItem('pklp_teacher_pin') || '';
   let studioPlayer = null;
@@ -97,8 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
           question: cp.question,
           options: cp.options,
           correctAnswer: cp.correctAnswer || 'A',
-          feedbackCorrect: cp.feedbackCorrect || 'Magaling! Tumpak ang sagot.',
-          feedbackIncorrect: cp.feedbackIncorrect || 'Maling sagot. Tandaan ang konsepto.'
+          feedbackCorrect: cp.feedbackCorrect || ui("Correct!"),
+          feedbackIncorrect: cp.feedbackIncorrect || ui("Review this part of the lesson.")
         }));
 
         renderCheckpointsList();
@@ -210,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fbWrong = cpFeedbackWrong.value.trim();
 
     if (isNaN(sec) || !qText || !textA || !textB) {
-      alert('Pakipunan ang oras (segundo), tanong, at hindi bababa sa pagpipilian A at B.');
+      alert(ui("Enter the time in seconds, a question, and at least choices A and B."));
       return;
     }
 
@@ -222,12 +230,12 @@ document.addEventListener('DOMContentLoaded', () => {
       options: [
         { id: 'A', text: textA },
         { id: 'B', text: textB },
-        { id: 'C', text: textC || 'Wala sa nabanggit' },
-        { id: 'D', text: textD || 'Lahat ng nabanggit' }
+        { id: 'C', text: textC || ui("None of the above") },
+        { id: 'D', text: textD || ui("All of the above") }
       ],
       correctAnswer: selectedCorrect,
-      feedbackCorrect: fbCorrect || 'Magaling! Tumpak ang iyong sagot.',
-      feedbackIncorrect: fbWrong || 'Maling sagot. Tandaan ang tamang konsepto.'
+      feedbackCorrect: fbCorrect || ui("Well done! Your answer is correct."),
+      feedbackIncorrect: fbWrong || ui("Review this part of the lesson.")
     };
 
     checkpoints.push(newCp);
@@ -244,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     choiceD.value = '';
     cpFeedbackCorrect.value = '';
     cpFeedbackWrong.value = '';
-    alert('Naidagdag ang checkpoint!');
+    alert(ui("Question added!"));
   });
 
   // 6. Render Checkpoints
@@ -253,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (checkpoints.length === 0) {
       checkpointsList.innerHTML = `
         <p style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 14px;">
-          Wala pang checkpoints. Magpatugtog ng video at i-click ang "+ Magdagdag ng Tanong Dito".
+${ui("No questions yet. Play the video and click “Add Question Here”.")}
         </p>
       `;
       return;
@@ -270,10 +278,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <div>
           <strong>[${min}:${sec}] Q${idx + 1}:</strong> ${escapeHtml(cp.question.substring(0, 45))}${cp.question.length > 45 ? '...' : ''}
           <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">
-            Tamang Sagot: <strong>${cp.correctAnswer || 'A'}</strong> | ${cp.options.length} Pagpipilian
+            ${ui("Correct answer:")} <strong>${cp.correctAnswer || 'A'}</strong> | ${cp.options.length} ${ui("choices")}
           </div>
         </div>
-        <button class="btn-small btn-delete" data-idx="${idx}">🗑️ Burahin</button>
+        <button class="btn-small btn-delete" data-idx="${idx}">${ui("🗑️ Delete")}</button>
       `;
 
       item.querySelector('.btn-delete').addEventListener('click', () => {
@@ -295,12 +303,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoType = document.getElementById('lesson-video-type').value;
     const videoUrl = document.getElementById('lesson-direct-url').value.trim();
     if (!title || !(videoType === 'direct' ? videoUrl : ytid) || checkpoints.length === 0) {
-      alert('Pakitiyak na may Pamagat, valid YouTube ID, at hindi bababa sa 1 checkpoint.');
+      alert(ui("Enter a title, a valid video source, and at least one question."));
       return;
     }
 
     btnPublishAll.disabled = true;
-    btnPublishAll.textContent = 'Inililigtas ang aralin...';
+    btnPublishAll.textContent = ui("Saving ADM…");
 
     fetch('/api/studio/save-lesson', {
       method: 'POST',
@@ -325,11 +333,12 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .then(data => {
       btnPublishAll.disabled = false;
-      btnPublishAll.textContent = '🚀 I-SAVE AT I-PUBLISH ANG BUONG ARALIN';
+      btnPublishAll.textContent = ui("🚀 SAVE AND PUBLISH ADM");
 
       publishSuccessBox.classList.remove('hidden');
       createNew = false;
       history.replaceState(null, '', '/studio.html?lesson=' + encodeURIComponent(data.lesson.id));
+      updateLessonLinks();
       const fullUrl = window.location.origin + '/play.html?lesson=' + encodeURIComponent(data.lesson.id);
       shareableStudentLink.value = fullUrl;
       shareableStudentLink.focus();
@@ -337,9 +346,9 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(err => {
       console.error(err);
-      alert('Nagka-error sa pag-save. Pakisubukang muli.');
+      alert(ui("Could not save the ADM. Please try again."));
       btnPublishAll.disabled = false;
-      btnPublishAll.textContent = '🚀 I-SAVE AT I-PUBLISH ANG BUONG ARALIN';
+      btnPublishAll.textContent = ui("🚀 SAVE AND PUBLISH ADM");
     });
   });
 

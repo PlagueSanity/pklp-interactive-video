@@ -21,8 +21,11 @@ app.get('/ang_mga_tinig_ng_nakaraan_final.mp4', (req, res) => {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// DATA_DIR allows an isolated development/test store; production keeps its existing data.
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+fs.mkdirSync(DATA_DIR, { recursive: true });
 // Initialize SQLite database
-const dbPath = path.join(__dirname, 'data', 'pklp.sqlite');
+const dbPath = path.join(DATA_DIR, 'pklp.sqlite');
 const db = new DatabaseSync(dbPath);
 
 db.exec(`
@@ -54,10 +57,10 @@ try {
 }
 
 // Load Lesson Data
-const lessonPath = path.join(__dirname, 'data', 'lesson.json');
+const lessonPath = path.join(DATA_DIR, 'lesson.json');
 let lessonData = JSON.parse(fs.readFileSync(lessonPath, 'utf-8'));
-const lessonsPath = path.join(__dirname, 'data', 'lessons.json');
-const clearedPath = path.join(__dirname, 'data', 'cleared-submissions.json');
+const lessonsPath = path.join(DATA_DIR, 'lessons.json');
+const clearedPath = path.join(DATA_DIR, 'cleared-submissions.json');
 let clearedSubmissionIds = [];
 try { clearedSubmissionIds = JSON.parse(fs.readFileSync(clearedPath, 'utf-8')); } catch (_) {}
 let clearingResults = false;
@@ -83,7 +86,7 @@ function persistLessons() {
 
 
 // Load Section List (teacher-editable from the dashboard; students pick from it)
-const sectionsPath = path.join(__dirname, 'data', 'sections.json');
+const sectionsPath = path.join(DATA_DIR, 'sections.json');
 const DEFAULT_SECTIONS = ['11 - STEM A', '11 - STEM B', '11 - HUMSS A', '11 - HUMSS B', '11 - ABM', '11 - TVL'];
 
 function readSections() {
@@ -95,7 +98,7 @@ function readSections() {
 }
 
 // Main teacher's settings (whether their class session is open)
-const settingsPath = path.join(__dirname, 'data', 'settings.json');
+const settingsPath = path.join(DATA_DIR, 'settings.json');
 
 function readMainSettings() {
   try {
@@ -106,8 +109,8 @@ function readMainSettings() {
 }
 
 // Teacher list (made by the main teacher; each has a secret login code and a public student link)
-const teachersPath = path.join(__dirname, 'data', 'teachers.json');
-const MAIN_TEACHER = { id: 'main', name: 'Pangunahing Guro', isAdmin: true };
+const teachersPath = path.join(DATA_DIR, 'teachers.json');
+const MAIN_TEACHER = { id: 'main', name: 'Main Teacher', isAdmin: true };
 
 function readTeachers() {
   try {
@@ -275,7 +278,7 @@ app.use('/api', (req, res, next) => {
 });
 
 const lessonRoutes = new Set(['/lesson', '/admin/lesson', '/studio/save-lesson',
-  '/checkpoints/verify', '/submissions', '/admin/results', '/admin/export-csv', '/admin/clear-results']);
+  '/checkpoints/verify', '/submissions', '/admin/results', '/admin/export-csv', '/admin/clear-results', '/sections', '/admin/me', '/admin/session', '/admin/duplicate-lesson', '/admin/teachers']);
 app.use('/api', (req, res, next) => {
   if (!lessonRoutes.has(req.path)) return next();
   const id = req.body?.lessonId || req.query.lesson;
@@ -287,7 +290,7 @@ app.use('/api', (req, res, next) => {
 app.get('/api/admin/lessons', verifyTeacherPin, (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.json({ lessons: allLessons().map(l => ({ id: l.id, title: l.title, subject: l.subject,
-    questions: l.checkpoints.length, isDefault: l.id === lessonData.id })) });
+    questions: l.checkpoints.length, isDefault: l.id === lessonData.id, isOpen: sessionIsOpen(req.teacher, l.id) })) });
 });
 
 // Changes are refused until the Sheet has loaded, so old data never overwrites the Sheet
@@ -307,6 +310,15 @@ function randomChars(n) {
 function teacherFromLink(slug) {
   if (!slug) return MAIN_TEACHER;
   return readTeachers().find(t => t.slug === String(slug).toLowerCase()) || null;
+}
+
+// Legacy links retain their previous state. New ADMs start closed for every teacher.
+function sessionIsOpen(teacher, lessonId) {
+  const settings = teacher.isAdmin ? readMainSettings() : teacher;
+  const saved = settings.admSessions?.[lessonId];
+  const isOpen = saved ? saved.isOpen === true
+    : (lessonId === lessonData.id && settings.isOpen !== false);
+  return isOpen && (teacher.isAdmin || !!teacher.resultsSheetUrl);
 }
 
 function cleanSectionList(sections) {
@@ -329,8 +341,8 @@ app.get('/api/sections', (req, res) => {
   if (!teacher) {
     return res.status(404).json({ error: 'Hindi kilala ang link ng guro. Hingin muli ang tamang link sa iyong guro.' });
   }
-  if (teacher.isAdmin) return res.json({ sections: readSections(), teacherName: '', isOpen: readMainSettings().isOpen !== false });
-  res.json({ sections: teacher.sections || [], teacherName: teacher.name, isOpen: teacher.isOpen !== false && !!teacher.resultsSheetUrl });
+  res.json({ sections: teacher.isAdmin ? readSections() : (teacher.sections || []),
+    teacherName: teacher.isAdmin ? '' : teacher.name, isOpen: sessionIsOpen(teacher, req.lesson.id) });
 });
 
 /**
@@ -366,7 +378,7 @@ app.get('/api/admin/me', verifyTeacherPin, (req, res) => {
   const sheet = t.isAdmin
     ? { connected: sheetOn, name: 'main', url: '' }
     : { connected: !!t.resultsSheetUrl, name: t.resultsSheetName || '', url: t.resultsSheetUrl || '' };
-  const isOpen = t.isAdmin ? readMainSettings().isOpen !== false : t.isOpen !== false && sheet.connected;
+  const isOpen = sessionIsOpen(t, req.lesson.id);
   res.json({ id: t.id, name: t.name, isAdmin: !!t.isAdmin, slug: t.slug || '', isOpen, sheet, ownerEmail: sheetOwnerEmail });
 });
 
@@ -405,7 +417,8 @@ app.post('/api/admin/results-sheet', verifyTeacherPin, requireSheetReady, async 
 app.post('/api/admin/session', verifyTeacherPin, requireSheetReady, (req, res) => {
   const isOpen = req.body.isOpen === true;
   if (req.teacher.isAdmin) {
-    const settings = { ...readMainSettings(), isOpen };
+    const previous = readMainSettings();
+    const settings = { ...previous, admSessions: { ...previous.admSessions, [req.lesson.id]: { isOpen } } };
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
     saveToSheet('mainSettings', settings);
   } else {
@@ -413,7 +426,7 @@ app.post('/api/admin/session', verifyTeacherPin, requireSheetReady, (req, res) =
     const me = list.find(t => t.id === req.teacher.id);
     if (!me) return res.status(401).json({ error: 'Hindi wasto ang code.' });
     if (isOpen && !me.resultsSheetUrl) return res.status(400).json({ error: 'SHEET_REQUIRED' });
-    me.isOpen = isOpen;
+    me.admSessions = { ...me.admSessions, [req.lesson.id]: { isOpen } };
     writeTeachers(list);
   }
   res.json({ success: true, isOpen });
@@ -426,7 +439,7 @@ app.get('/api/admin/teachers', verifyTeacherPin, requireAdmin, (req, res) => {
   const counts = {};
   try {
     db.prepare('SELECT teacher_id, COUNT(*) AS n FROM submissions WHERE lesson_id = ? AND submission_id NOT IN (SELECT submission_id FROM cleared_submissions) GROUP BY teacher_id')
-      .all(lessonData.id)
+      .all(req.lesson.id)
       .forEach(r => { counts[r.teacher_id] = r.n; });
   } catch (e) {}
   res.json({
@@ -518,6 +531,17 @@ app.post('/api/studio/save-lesson', verifyTeacherPin, requireAdmin, requireSheet
     persistLessons();
   }
   res.json({ success: true, lesson: updatedLesson });
+});
+
+// Copies lesson content only: never student records or another ADM's session state.
+app.post('/api/admin/duplicate-lesson', verifyTeacherPin, requireAdmin, requireSheetReady, (req, res) => {
+  if (clearingResults) return res.status(503).json({ error: 'Please retry after clearing results finishes.' });
+  const id = 'adm-' + crypto.randomUUID();
+  const title = String(req.body.title || `${req.lesson.title} (copy)`).trim().slice(0, 200);
+  if (!title) return res.status(400).json({ error: 'Enter an ADM title.' });
+  extraLessons[id] = { ...structuredClone(req.lesson), id, title };
+  persistLessons();
+  res.status(201).json({ success: true, lesson: extraLessons[id] });
 });
 
 /**
