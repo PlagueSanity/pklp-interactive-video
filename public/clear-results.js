@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ confirmation })
       });
       const result = await r.json();
-      if (!r.ok) throw new Error(result.error || 'Could not clear records.');
+      if (!r.ok) throw new Error(result.error || (filipino ? 'Hindi mabura ang mga tala.' : 'Could not clear records.'));
       alert(filipino ? `${result.cleared} tala ang binura para sa ADM na ito. Nananatili ang backup sa Google Sheets.`
         : `${result.cleared} record(s) cleared for this ADM. Google Sheets retains a backup.`);
       document.getElementById('btn-refresh').click();

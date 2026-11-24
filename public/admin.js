@@ -98,7 +98,16 @@ const I18N = {
     err_NO_ACCESS: 'Hindi mabuksan ang Sheet. Siguraduhing na-share ito bilang Editor sa email sa hakbang 2.',
     err_CHECK_FAILED: 'Hindi nasuri ang Sheet. Pakisubukang muli.',
     err_NO_STORAGE: 'Walang nakakonektang Google storage ang site na ito.',
-    err_SHEET_REQUIRED: 'Ikonekta muna ang iyong Google Sheet ng resulta bago buksan ang sesyon.'
+    err_SHEET_REQUIRED: 'Ikonekta muna ang iyong Google Sheet ng resulta bago buksan ang sesyon.',
+    err_NOT_NEEDED: 'Ang pangunahing guro ay gumagamit ng pangunahing Google Sheet.',
+    themeLabel: 'Tema',
+    themeLight: 'Maliwanag',
+    themeDark: 'Madilim',
+    themeSwitchAria: 'Tema ng kulay',
+    langSwitchAria: 'Wika ng interface',
+    admTabsAria: 'Mga sesyon ng ADM',
+    copySuffix: '(kopya)',
+    genericError: 'May naganap na error. Pakisubukang muli.'
   },
   en: {
     dashboardTitle: "Teacher Dashboard",
@@ -198,7 +207,16 @@ const I18N = {
     err_NO_ACCESS: 'Cannot open the Sheet. Make sure it is shared as Editor with the email in step 2.',
     err_CHECK_FAILED: 'Could not check the Sheet. Please try again.',
     err_NO_STORAGE: 'This site has no Google storage connected.',
-    err_SHEET_REQUIRED: 'Connect your results Google Sheet before opening the session.'
+    err_SHEET_REQUIRED: 'Connect your results Google Sheet before opening the session.',
+    err_NOT_NEEDED: 'The main teacher uses the main Google Sheet.',
+    themeLabel: 'Theme',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    themeSwitchAria: 'Color theme',
+    langSwitchAria: 'Interface language',
+    admTabsAria: 'ADM sessions',
+    copySuffix: '(copy)',
+    genericError: 'Something went wrong. Please try again.'
   }
 };
 
@@ -257,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function serverMsg(message) {
-    if (I18N.fil['err_' + message]) return t('err_' + message);
+    if (I18N.en['err_' + message]) return t('err_' + message);
     if (lang === 'en' && /^Nasa listahan na si /.test(message)) return message.replace('Nasa listahan na si ', 'Teacher already exists: ');
     return lang === 'en' && SERVER_MESSAGES_EN[message] ? SERVER_MESSAGES_EN[message] : message;
   }
@@ -269,7 +287,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
     document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
-    document.querySelectorAll('.lang-switch button').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+    document.querySelectorAll('.lang-switch button').forEach(b => {
+      const active = b.dataset.lang === lang;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
     document.getElementById('metric-pass-label').textContent = t('metricPass', { pct: PASS_PERCENT });
 
     // Re-draw the parts built in code
@@ -335,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function api(url, options = {}) {
     options.headers = Object.assign({ 'x-teacher-pin': currentPin }, options.headers || {});
     return fetch(url, options).then(r => {
-      if (!r.ok) return r.json().catch(() => ({})).then(d => { throw new Error(serverMsg(d.error || 'Error')); });
+      if (!r.ok) return r.json().catch(() => ({})).then(d => { throw new Error(serverMsg(d.error || t('genericError'))); });
       return r.json();
     });
   }
@@ -394,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.getElementById('btn-duplicate-adm').addEventListener('click', async (e) => {
-    const name = prompt(t('copyAdmTitle'), document.getElementById('admin-lesson-title').textContent + ' (copy)');
+    const name = prompt(t('copyAdmTitle'), document.getElementById('admin-lesson-title').textContent + ' ' + t('copySuffix'));
     if (!name?.trim()) return;
     e.currentTarget.disabled = true;
     document.getElementById('adm-status').textContent = t('admCopying');
@@ -417,14 +440,14 @@ document.addEventListener('DOMContentLoaded', () => {
     me.isOpen = isOpen;
     document.getElementById('session-state').textContent = isOpen ? t('sessionOpen') : t('sessionClosed');
     document.getElementById('session-hint').textContent = isOpen ? t('sessionOpenHint') : t('sessionClosedHint');
-    sessionCard.style.borderColor = isOpen ? '#86efac' : '#fca5a5';
-    sessionCard.style.background = isOpen ? '#f0fdf4' : '#fef2f2';
+    sessionCard.classList.toggle('is-open', isOpen);
+    sessionCard.classList.toggle('is-closed', !isOpen);
     btnToggleSession.textContent = isOpen ? t('closeSession') : t('openSession');
-    btnToggleSession.style.background = isOpen ? 'var(--danger)' : 'var(--success)';
+    btnToggleSession.classList.toggle('btn-danger', isOpen);
+    btnToggleSession.classList.toggle('btn-success', !isOpen);
 
     const needsSheet = !me.isAdmin && !(me.sheet && me.sheet.connected);
     btnToggleSession.disabled = needsSheet && !isOpen;
-    btnToggleSession.style.opacity = btnToggleSession.disabled ? '0.5' : '1';
     if (needsSheet && !isOpen) document.getElementById('session-hint').textContent = t('sheetNeeded');
   }
 
@@ -437,8 +460,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderSheet() {
     const sheet = me.sheet || { connected: false };
     const connectedEl = document.getElementById('sheet-connected');
+    const sheetCard = document.getElementById('sheet-card');
     document.getElementById('sheet-state').textContent = sheet.connected ? t('sheetOn') : t('sheetOff');
-    document.getElementById('sheet-card').style.borderColor = sheet.connected ? '#86efac' : '#fcd34d';
+    sheetCard.classList.toggle('is-connected', !!sheet.connected);
+    sheetCard.classList.toggle('is-disconnected', !sheet.connected);
     document.getElementById('sheet-owner-email').textContent = me.ownerEmail || '—';
 
     if (me.isAdmin) {
@@ -546,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTable(allSubmissions);
       })
       .catch(() => {
-        tbody.innerHTML = `<tr><td style="color: var(--danger); padding: 16px;">${t('resultsLoadError')}</td></tr>`;
+        tbody.innerHTML = `<tr><td class="table-error-cell">${t('resultsLoadError')}</td></tr>`;
       });
   }
 
@@ -586,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('table-count-label').textContent = t('showing', { n: filtered.length });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align: center; color: var(--text-muted); padding: 24px;">${t('noResults')}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${cols}" class="table-empty-cell">${t('noResults')}</td></tr>`;
       return;
     }
 
@@ -608,13 +633,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       tr.innerHTML = `
-        <td style="color: var(--text-muted);">${idx + 1}</td>
+        <td class="muted-cell">${idx + 1}</td>
         <td><strong>${escapeHtml(sub.student_name)}</strong></td>
-        <td><span class="badge" style="background: #e2e8f0; color: #334155;">${escapeHtml(sub.section)}</span></td>
+        <td><span class="section-badge">${escapeHtml(sub.section)}</span></td>
         ${badges}
-        <td style="text-align: center; font-weight: 700; color: var(--primary);">${sub.score}/${sub.total_questions}</td>
-        <td style="text-align: center; font-weight: 600;">${pct}%</td>
-        <td style="font-size: 0.82rem; color: var(--text-muted);">${dateStr}</td>
+        <td class="score-cell">${sub.score}/${sub.total_questions}</td>
+        <td class="pct-cell">${pct}%</td>
+        <td class="muted-cell">${dateStr}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -666,22 +691,21 @@ document.addEventListener('DOMContentLoaded', () => {
     sectionsList.innerHTML = '';
     if (sectionChoices.length === 0) {
       const empty = document.createElement('span');
-      empty.style.cssText = 'color: var(--danger); font-size: 0.85rem;';
+      empty.className = 'empty-warning';
       empty.textContent = t('noSections');
       sectionsList.appendChild(empty);
       return;
     }
     sectionChoices.forEach(sec => {
       const chip = document.createElement('span');
-      chip.className = 'badge';
-      chip.style.cssText = 'background: #e2e8f0; color: #334155; display: inline-flex; align-items: center; gap: 6px; padding: 6px 6px 6px 12px; font-size: 0.85rem;';
+      chip.className = 'section-chip';
       chip.textContent = sec;
 
       const btnRemove = document.createElement('button');
       btnRemove.type = 'button';
+      btnRemove.className = 'section-chip-remove';
       btnRemove.textContent = '✕';
       btnRemove.setAttribute('aria-label', t('removeSectionLabel', { name: sec }));
-      btnRemove.style.cssText = 'border: none; background: #cbd5e1; color: #334155; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 0.75rem; line-height: 1;';
       btnRemove.addEventListener('click', () => {
         if (!confirm(t('removeSectionConfirm', { name: sec }))) return;
         saveSections(sectionChoices.filter(s => s !== sec));
@@ -723,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTeachers(teachers) {
     teachersTbody.innerHTML = '';
     if (teachers.length === 0) {
-      teachersTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 16px;">${t('noTeachers')}</td></tr>`;
+      teachersTbody.innerHTML = `<tr><td colspan="6" class="table-empty-cell">${t('noTeachers')}</td></tr>`;
       return;
     }
     teachers.forEach(tc => {
@@ -731,7 +755,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tr.innerHTML = `
         <td><strong>${escapeHtml(tc.name)}</strong></td>
         <td><span class="code-pill">${escapeHtml(tc.code)}</span></td>
-        <td style="font-size: 0.8rem; word-break: break-all;">${escapeHtml(linkFor(tc.slug))}</td>
+        <td style="font-size: 0.82rem; word-break: break-all;">${escapeHtml(linkFor(tc.slug))}</td>
         <td style="text-align: center;">${tc.students}</td>
         <td style="text-align: center;">${tc.sheetConnected ? '✓' : '—'}</td>
         <td style="white-space: nowrap;"></td>
@@ -740,8 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const btnCopy = document.createElement('button');
       btnCopy.type = 'button';
-      btnCopy.className = 'btn btn-sm';
-      btnCopy.style.cssText = 'padding: 4px 10px; font-size: 0.78rem; margin-right: 6px;';
+      btnCopy.className = 'btn btn-secondary table-action-btn';
       btnCopy.textContent = t('copy');
       btnCopy.title = t('copyTeacherTitle');
       btnCopy.addEventListener('click', () => copyText(
@@ -749,8 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const btnRemove = document.createElement('button');
       btnRemove.type = 'button';
-      btnRemove.className = 'btn btn-sm';
-      btnRemove.style.cssText = 'padding: 4px 10px; font-size: 0.78rem; background: var(--danger);';
+      btnRemove.className = 'btn btn-danger table-action-btn';
       btnRemove.textContent = t('remove');
       btnRemove.addEventListener('click', () => {
         if (!confirm(t('removeTeacherConfirm', { name: tc.name }))) return;

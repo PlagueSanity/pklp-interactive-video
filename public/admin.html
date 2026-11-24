@@ -4,173 +4,180 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Teacher Dashboard - Classroom Video Quiz</title>
+  <script src="teacher-theme.js"></script>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .adm-tabs { display:flex; gap:8px; overflow-x:auto; padding:14px 0; margin-bottom:8px; }
-    .adm-tab { flex:0 0 auto; max-width:300px; padding:12px 16px; border:1px solid #94a3b8; border-radius:8px; background:#f8fafc; color:#334155; font:inherit; cursor:pointer; text-decoration:none; }
-    .adm-tab[aria-current="page"] { background:#075985; border-color:#075985; color:white; }
-    .adm-tab:focus-visible { outline:3px solid #0284c7; outline-offset:2px; }
-    .adm-tab small { display:block; margin-top:4px; }
-    .dash-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 18px; margin-bottom: 18px; }
-    .dash-card h2 { font-size: 0.95rem; margin: 0 0 4px; }
-    .dash-hint { color: var(--text-muted); font-size: 0.8rem; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .row input { flex: 1; min-width: 180px; margin: 0; }
-    .btn-sm { width: auto; padding: 8px 16px; font-size: 0.85rem; }
-    .teacher-table td, .teacher-table th { font-size: 0.85rem; }
-    .code-pill { font-family: ui-monospace, Consolas, monospace; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; }
-    .lang-switch { display: inline-flex; border-radius: 6px; overflow: hidden; border: 1px solid rgba(148,163,184,0.6); }
-    .lang-switch button { border: none; background: transparent; color: inherit; padding: 5px 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
-    .lang-switch button.active { background: #38bdf8; color: #0f172a; }
-  </style>
+  <link rel="stylesheet" href="teacher-ui.css">
   <script src="/lesson-context.js"></script>
 </head>
-<body style="background-color: #f1f5f9; padding: 20px;">
+<body class="teacher-page">
 
   <!-- Login -->
-  <div id="pin-modal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 100;">
-    <div style="background: #fff; padding: 24px; border-radius: 12px; width: 100%; max-width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <h3 style="font-size: 1.1rem; margin: 0;">🔒 <span data-i18n="dashboardTitle">Teacher Dashboard</span></h3>
-        <div class="lang-switch" style="color: #334155;">
+  <div id="pin-modal" class="pin-modal">
+    <div class="pin-modal-card">
+      <div class="pin-modal-controls">
+        <div class="lang-switch" role="group" data-i18n-aria="langSwitchAria" aria-label="Interface language">
           <button type="button" data-lang="en">EN</button><button type="button" data-lang="fil">FIL</button>
         </div>
+        <div class="control-group">
+          <span class="control-label" data-i18n="themeLabel">Theme</span>
+          <div class="theme-switch" role="group" data-i18n-aria="themeSwitchAria" aria-label="Color theme">
+            <button type="button" data-theme-choice="light" aria-pressed="false">☀️ <span data-i18n="themeLight">Light</span></button>
+            <button type="button" data-theme-choice="dark" aria-pressed="false">🌙 <span data-i18n="themeDark">Dark</span></button>
+          </div>
+        </div>
       </div>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;" data-i18n="loginHint"></p>
-      <input type="password" id="input-pin" data-i18n-ph="loginPlaceholder" style="margin-bottom: 14px;" autofocus autocomplete="off">
-      <button id="btn-unlock" class="btn" data-i18n="loginButton"></button>
-      <p id="pin-error" style="color: var(--danger); font-size: 0.8rem; margin-top: 8px;" class="hidden" data-i18n="loginError"></p>
+      <div class="pin-modal-top">
+        <h3>🔒 <span data-i18n="dashboardTitle">Teacher Dashboard</span></h3>
+      </div>
+      <p class="pin-modal-hint" data-i18n="loginHint">Enter your teacher code.</p>
+      <input type="password" id="input-pin" class="pin-modal-input" data-i18n-ph="loginPlaceholder" placeholder="Example: SANTOS-7K2Q" autofocus autocomplete="off">
+      <button id="btn-unlock" class="btn btn-full" data-i18n="loginButton">Sign in</button>
+      <p id="pin-error" class="pin-error hidden" data-i18n="loginError">Wrong code. Please try again.</p>
     </div>
   </div>
 
   <div class="container admin-container hidden" id="admin-main">
-    <header class="app-header" style="background: #0f172a; padding: 18px 24px;">
-      <div>
-        <h1 style="font-size: 1.15rem;">👋 <span data-i18n="hello"></span>, <span id="teacher-name"></span>!</h1>
-        <small id="admin-lesson-title" style="color: #94a3b8; font-size: 0.8rem;"></small>
+    <header class="teacher-header">
+      <div class="teacher-header-brand">
+        <small class="teacher-eyebrow">CLASSROOM VIDEO QUIZ</small>
+        <h1>👋 <span data-i18n="hello">Hello</span>, <span id="teacher-name"></span>!</h1>
+        <small id="admin-lesson-title" class="teacher-header-sub"></small>
       </div>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-        <div class="lang-switch" style="color: #fff;">
+      <div class="teacher-header-controls">
+        <div class="lang-switch" role="group" data-i18n-aria="langSwitchAria" aria-label="Interface language">
           <button type="button" data-lang="en">EN</button><button type="button" data-lang="fil">FIL</button>
         </div>
-        <a href="/adm.html" class="btn" style="width:auto" data-i18n="admLibrary">ADM library</a>
-        <a href="/studio.html" id="link-studio" class="btn hidden" style="width: auto; padding: 6px 14px; font-size: 0.8rem; background: #38bdf8; color: #0f172a; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center;">
-          🎬 <span data-i18n="studio"></span>
+        <div class="control-group">
+          <span class="control-label" data-i18n="themeLabel">Theme</span>
+          <div class="theme-switch" role="group" data-i18n-aria="themeSwitchAria" aria-label="Color theme">
+            <button type="button" data-theme-choice="light" aria-pressed="false">☀️ <span data-i18n="themeLight">Light</span></button>
+            <button type="button" data-theme-choice="dark" aria-pressed="false">🌙 <span data-i18n="themeDark">Dark</span></button>
+          </div>
+        </div>
+        <a href="/adm.html" class="btn btn-ghost-header" data-i18n="admLibrary">ADM library</a>
+        <a href="/studio.html" id="link-studio" class="btn btn-pink btn-sm hidden">
+          🎬 <span data-i18n="studio">Teacher Studio</span>
         </a>
-        <button id="btn-refresh" style="background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">🔄 <span data-i18n="refresh"></span></button>
-        <button id="btn-logout" style="background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600;" data-i18n="logout"></button>
+        <button id="btn-refresh" class="btn btn-ghost-header">🔄 <span data-i18n="refresh">Refresh</span></button>
+        <button id="btn-logout" class="btn btn-ghost-header" data-i18n="logout">Log out</button>
       </div>
     </header>
 
-    <div class="card-content" style="padding: 24px;">
+    <div class="card-content dash-body">
 
       <section class="dash-card" aria-labelledby="adm-tabs-heading">
-        <h2 id="adm-tabs-heading" data-i18n="myAdms">My ADM sessions</h2>
-        <p class="dash-hint" data-i18n="admHint">Each tab has its own video, student link, session switch, and results.</p>
-        <nav id="adm-tabs" class="adm-tabs" aria-label="ADM sessions"></nav>
-        <div class="row hidden" id="adm-actions">
-          <a class="btn btn-sm" href="/studio.html?new=1" data-i18n="newAdm">New ADM</a>
-          <button type="button" id="btn-duplicate-adm" class="btn btn-sm" data-i18n="duplicateAdm">Duplicate ADM</button>
+        <div class="dash-card-head">
+          <div>
+            <h2 id="adm-tabs-heading" data-i18n="myAdms">My ADM sessions</h2>
+            <p class="dash-hint" data-i18n="admHint">Each tab has its own video, student link, session switch, and results.</p>
+          </div>
+          <div class="row hidden" id="adm-actions">
+            <a class="btn btn-sm btn-pink" href="/studio.html?new=1" data-i18n="newAdm">New ADM</a>
+            <button type="button" id="btn-duplicate-adm" class="btn btn-sm btn-secondary" data-i18n="duplicateAdm">Duplicate ADM</button>
+          </div>
         </div>
+        <nav id="adm-tabs" class="adm-tabs" data-i18n-aria="admTabsAria" aria-label="ADM sessions"></nav>
         <p id="adm-status" class="dash-hint" role="status" aria-live="polite"></p>
       </section>
 
-      <!-- 0. Session open/close -->
-      <div class="dash-card" id="session-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-        <div>
-          <h2>🚦 <span data-i18n="session"></span>: <span id="session-state">...</span></h2>
-          <p class="dash-hint" id="session-hint"></p>
+      <div class="dash-grid-2">
+        <!-- 0. Session open/close -->
+        <div class="dash-card session-card" id="session-card">
+          <div class="session-info">
+            <h2>🚦 <span data-i18n="session">Session</span>: <span id="session-state">...</span></h2>
+            <p class="dash-hint" id="session-hint"></p>
+          </div>
+          <button id="btn-toggle-session" class="btn btn-sm">...</button>
         </div>
-        <button id="btn-toggle-session" class="btn btn-sm" style="min-width: 190px;">...</button>
-      </div>
 
-      <!-- 0b. Results Sheet (each teacher connects their own Google Sheet) -->
-      <div class="dash-card" id="sheet-card">
-        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;">
-          <h2>📄 <span data-i18n="sheetTitle"></span>: <span id="sheet-state"></span></h2>
-          <small id="sheet-status" class="dash-hint"></small>
-        </div>
-        <p class="dash-hint" id="sheet-connected"></p>
-        <div id="sheet-steps" class="hidden">
-          <ol class="dash-hint" style="margin: 8px 0 12px 18px; line-height: 1.7;">
-            <li data-i18n-html="sheetStep1"></li>
-            <li><span data-i18n-html="sheetStep2"></span> <span class="code-pill" id="sheet-owner-email"></span>
-              <button type="button" id="btn-copy-email" class="btn btn-sm" style="padding: 2px 8px; font-size: 0.75rem;" data-i18n="copy"></button></li>
-            <li data-i18n="sheetStep3"></li>
-          </ol>
+        <!-- 1. Student link -->
+        <div class="dash-card">
+          <h2>🔗 <span data-i18n="linkTitle">Link for your students</span></h2>
+          <p class="dash-hint" data-i18n="linkHint">Give this link to your class. Only you can see their answers.</p>
           <div class="row">
-            <input type="text" id="input-sheet-url" data-i18n-ph="sheetPlaceholder">
-            <button id="btn-connect-sheet" class="btn btn-sm" data-i18n="sheetConnect"></button>
+            <input type="text" id="student-link" readonly>
+            <button id="btn-copy-link" class="btn btn-sm btn-secondary" data-i18n="copy">📋 Copy</button>
           </div>
         </div>
-      </div>
 
-      <!-- 1. Student link -->
-      <div class="dash-card">
-        <h2>🔗 <span data-i18n="linkTitle"></span></h2>
-        <p class="dash-hint" style="margin-bottom: 10px;" data-i18n="linkHint"></p>
-        <div class="row">
-          <input type="text" id="student-link" readonly>
-          <button id="btn-copy-link" class="btn btn-sm" data-i18n="copy"></button>
+        <!-- 0b. Results Sheet (each teacher connects their own Google Sheet) -->
+        <div class="dash-card" id="sheet-card">
+          <div class="dash-card-head">
+            <h2>📄 <span data-i18n="sheetTitle">Results Google Sheet</span>: <span id="sheet-state"></span></h2>
+            <small id="sheet-status" class="dash-hint"></small>
+          </div>
+          <p class="dash-hint" id="sheet-connected"></p>
+          <div id="sheet-steps" class="hidden">
+            <ol class="dash-hint sheet-steps-list">
+              <li data-i18n-html="sheetStep1"></li>
+              <li><span data-i18n-html="sheetStep2"></span> <span class="code-pill" id="sheet-owner-email"></span>
+                <button type="button" id="btn-copy-email" class="btn btn-xs btn-secondary" data-i18n="copy">📋 Copy</button></li>
+              <li data-i18n="sheetStep3"></li>
+            </ol>
+            <div class="row">
+              <input type="text" id="input-sheet-url" data-i18n-ph="sheetPlaceholder" placeholder="https://docs.google.com/spreadsheets/d/...">
+              <button id="btn-connect-sheet" class="btn btn-sm" data-i18n="sheetConnect">🔗 Connect</button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- 2. Sections -->
-      <div class="dash-card">
-        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;">
-          <h2>🏫 <span data-i18n="sectionsTitle"></span></h2>
-          <small id="sections-status" class="dash-hint"></small>
-        </div>
-        <p class="dash-hint" data-i18n="sectionsHint"></p>
-        <div id="sections-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0;"></div>
-        <div class="row">
-          <input type="text" id="input-new-section" data-i18n-ph="sectionPlaceholder" maxlength="60">
-          <button id="btn-add-section" class="btn btn-sm" data-i18n="add"></button>
+        <!-- 2. Sections -->
+        <div class="dash-card">
+          <div class="dash-card-head">
+            <h2>🏫 <span data-i18n="sectionsTitle">My Sections</span></h2>
+            <small id="sections-status" class="dash-hint"></small>
+          </div>
+          <p class="dash-hint" data-i18n="sectionsHint">Your students choose from this list before they start.</p>
+          <div id="sections-list" class="sections-list"></div>
+          <div class="row">
+            <input type="text" id="input-new-section" data-i18n-ph="sectionPlaceholder" placeholder="Example: 11 - STEM C" maxlength="60">
+            <button id="btn-add-section" class="btn btn-sm" data-i18n="add">➕ Add</button>
+          </div>
         </div>
       </div>
 
       <!-- 3. Teachers (main teacher only) -->
       <div class="dash-card hidden" id="teachers-card">
-        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;">
-          <h2>👩‍🏫 <span data-i18n="teachersTitle"></span></h2>
+        <div class="dash-card-head">
+          <h2>👩‍🏫 <span data-i18n="teachersTitle">Teachers</span></h2>
           <small id="teachers-status" class="dash-hint"></small>
         </div>
         <p class="dash-hint" data-i18n-html="teachersHint"></p>
-        <div class="table-responsive" style="margin: 12px 0;">
+        <div class="table-responsive">
           <table class="teacher-table">
             <thead>
               <tr>
-                <th data-i18n="colName"></th><th data-i18n="colCode"></th><th data-i18n="colStudentLink"></th>
-                <th style="text-align: center;" data-i18n="colFinished"></th><th style="text-align: center;" data-i18n="colSheet"></th><th></th>
+                <th data-i18n="colName">Name</th><th data-i18n="colCode">Code (secret)</th><th data-i18n="colStudentLink">Student Link</th>
+                <th style="text-align: center;" data-i18n="colFinished">Finished</th><th style="text-align: center;" data-i18n="colSheet">Sheet</th><th></th>
               </tr>
             </thead>
             <tbody id="teachers-tbody"></tbody>
           </table>
         </div>
         <div class="row">
-          <input type="text" id="input-new-teacher" data-i18n-ph="teacherPlaceholder" maxlength="60">
-          <button id="btn-add-teacher" class="btn btn-sm" data-i18n="addTeacher"></button>
+          <input type="text" id="input-new-teacher" data-i18n-ph="teacherPlaceholder" placeholder="Example: Mrs. Santos" maxlength="60">
+          <button id="btn-add-teacher" class="btn btn-sm btn-pink" data-i18n="addTeacher">➕ Add Teacher</button>
         </div>
       </div>
 
       <!-- 4. Results -->
-      <div class="dash-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-          <h2>📊 <span data-i18n="resultsTitle"></span></h2>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button id="btn-export-csv" class="btn btn-sm" style="background: var(--success);" data-i18n="downloadCsv"></button>
-          <button id="btn-clear-records" class="btn btn-sm" style="background:#b42336" data-i18n="clearRecords">Clear records for this ADM</button>
+      <div class="dash-card results-card">
+        <div class="dash-card-head">
+          <h2>📊 <span data-i18n="resultsTitle">My Students' Results</span></h2>
+          <div class="row">
+            <button id="btn-export-csv" class="btn btn-sm btn-success" data-i18n="downloadCsv">📥 Download CSV</button>
+            <button id="btn-clear-records" class="btn btn-sm btn-danger" data-i18n="clearRecords">Clear records for this ADM</button>
           </div>
         </div>
 
         <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-val" id="metric-total-students">0</div>
-            <div class="metric-label" data-i18n="metricFinished"></div>
+            <div class="metric-label" data-i18n="metricFinished">Finished</div>
           </div>
           <div class="metric-card">
             <div class="metric-val" id="metric-avg-score">0</div>
-            <div class="metric-label" data-i18n="metricAverage"></div>
+            <div class="metric-label" data-i18n="metricAverage">Average Score</div>
           </div>
           <div class="metric-card">
             <div class="metric-val" id="metric-pass-rate">0%</div>
@@ -178,14 +185,14 @@
           </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <label for="filter-section" style="margin: 0; font-size: 0.85rem;" data-i18n="filterSection"></label>
-            <select id="filter-section" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
-              <option value="ALL"></option>
+        <div class="results-toolbar">
+          <div class="results-filter-group">
+            <label for="filter-section" data-i18n="filterSection">Section:</label>
+            <select id="filter-section">
+              <option value="ALL">All</option>
             </select>
           </div>
-          <div style="font-size: 0.82rem; color: var(--text-muted);" id="table-count-label"></div>
+          <div class="table-count" id="table-count-label"></div>
         </div>
 
         <div class="table-responsive">
