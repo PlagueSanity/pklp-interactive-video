@@ -14,6 +14,47 @@ const TEACHER_PIN = process.env.TEACHER_PIN || '1234';
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+const UI_MESSAGES_FIL = {
+  "Still connecting to the Google Sheet. Please try again in a few seconds.": "Kumokonekta pa sa Google Sheet. Pakisubukang muli makalipas ang ilang segundo.",
+  "Unknown teacher link. Ask your teacher for the correct link.": "Hindi kilala ang link ng guro. Hingin muli ang tamang link sa iyong guro.",
+  "A section list is required.": "Kailangan ang listahan ng mga seksiyon.",
+  "Invalid code.": "Hindi wasto ang code.",
+  "Enter the teacher's name.": "Ilagay ang pangalan ng guro.",
+  "Teacher not found.": "Hindi nakita ang guro.",
+  "No audio data was received.": "Walang audio data na natanggap.",
+  "Student name, section, and answers are required.": "Pangalan, seksiyon, at mga sagot ay kinakailangan.",
+  "For the main teacher only.": "Para lamang sa pangunahing guro.",
+  "ADM lesson not found. Check your lesson link.": "Hindi makita ang ADM. Suriin ang link ng aralin.",
+  "Clearing results. Please try saving again in a moment.": "Binubura ang mga resulta. Subukang mag-save muli makalipas ang ilang sandali.",
+  "Enter a title and a valid YouTube link or MP4 URL.": "Maglagay ng pamagat at wastong link ng YouTube o MP4.",
+  "Add between 1 and 100 questions.": "Magdagdag ng 1 hanggang 100 tanong.",
+  "Please retry after clearing results finishes.": "Subukang muli kapag tapos nang burahin ang mga resulta.",
+  "Enter an ADM title.": "Maglagay ng pamagat ng ADM.",
+  "Type CLEAR to confirm.": "I-type ang CLEAR upang kumpirmahin.",
+  "Another clear operation is in progress.": "May kasalukuyang pagbubura ng mga tala.",
+  "Could not save the clear request. Please retry. Your Google Sheet backup is retained.": "Hindi nai-save ang kahilingan sa pagbubura. Subukang muli. Nananatili ang backup sa Google Sheet.",
+  "Missing checkpointId or selectedOption": "Kulang ang tanong o napiling sagot.",
+  "Checkpoint not found": "Hindi makita ang tanong.",
+  "Submission belongs to another ADM.": "Para sa ibang ADM ang sagot na ito.",
+  "Could not save your result. Please retry.": "Hindi nai-save ang iyong resulta. Subukang muli."
+};
+app.use('/api', (req, res, next) => {
+  const language = String(req.query.lang || req.get('Accept-Language') || 'en').split(/[,;-]/)[0].toLowerCase();
+  req.interfaceLanguage = language === 'fil' || language === 'tl' ? 'fil' : 'en';
+  const json = res.json.bind(res);
+  res.json = data => {
+    if (data && typeof data.error === 'string' && req.interfaceLanguage === 'fil') {
+      let error = UI_MESSAGES_FIL[data.error];
+      if (!error && data.error.startsWith('Teacher already exists: ')) error = data.error.replace('Teacher already exists: ', 'Nasa listahan na ang gurong ');
+      if (!error) error = data.error.replace(/^Check question (\d+): time, choices, and correct answer are required\.$/, 'Suriin ang tanong $1: kailangan ang oras, mga pagpipilian, at tamang sagot.');
+      return json({...data, error});
+    }
+    return json(data);
+  };
+  next();
+});
+
+
 // Alias for final video name
 app.get('/ang_mga_tinig_ng_nakaraan_final.mp4', (req, res) => {
   res.redirect(301, '/ang_mga_tinig_ng_nakaraan.mp4');
@@ -296,7 +337,7 @@ app.get('/api/admin/lessons', verifyTeacherPin, (req, res) => {
 // Changes are refused until the Sheet has loaded, so old data never overwrites the Sheet
 function requireSheetReady(req, res, next) {
   if (sheetReady) return next();
-  res.status(503).json({ error: 'Kumokonekta pa sa Google Sheet. Pakisubukang muli makalipas ang ilang segundo.' });
+  res.status(503).json({ error: "Still connecting to the Google Sheet. Please try again in a few seconds." });
 }
 
 function randomChars(n) {
@@ -339,7 +380,7 @@ app.get('/api/sections', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const teacher = teacherFromLink(req.query.guro);
   if (!teacher) {
-    return res.status(404).json({ error: 'Hindi kilala ang link ng guro. Hingin muli ang tamang link sa iyong guro.' });
+    return res.status(404).json({ error: "Unknown teacher link. Ask your teacher for the correct link." });
   }
   res.json({ sections: teacher.isAdmin ? readSections() : (teacher.sections || []),
     teacherName: teacher.isAdmin ? '' : teacher.name, isOpen: sessionIsOpen(teacher, req.lesson.id) });
@@ -352,7 +393,7 @@ app.get('/api/sections', (req, res) => {
 app.post('/api/admin/sections', verifyTeacherPin, requireSheetReady, (req, res) => {
   const { sections } = req.body;
   if (!Array.isArray(sections)) {
-    return res.status(400).json({ error: 'Kailangan ang listahan ng mga seksiyon.' });
+    return res.status(400).json({ error: "A section list is required." });
   }
 
   const clean = cleanSectionList(sections);
@@ -362,7 +403,7 @@ app.post('/api/admin/sections', verifyTeacherPin, requireSheetReady, (req, res) 
   } else {
     const list = readTeachers();
     const me = list.find(t => t.id === req.teacher.id);
-    if (!me) return res.status(401).json({ error: 'Hindi wasto ang code.' });
+    if (!me) return res.status(401).json({ error: "Invalid code." });
     me.sections = clean;
     writeTeachers(list);
   }
@@ -403,7 +444,7 @@ app.post('/api/admin/results-sheet', verifyTeacherPin, requireSheetReady, async 
 
   const list = readTeachers();
   const me = list.find(t => t.id === req.teacher.id);
-  if (!me) return res.status(401).json({ error: 'Hindi wasto ang code.' });
+  if (!me) return res.status(401).json({ error: "Invalid code." });
   me.resultsSheetUrl = url.split('#')[0];
   me.resultsSheetName = String(check.name || '').slice(0, 100);
   writeTeachers(list);
@@ -424,7 +465,7 @@ app.post('/api/admin/session', verifyTeacherPin, requireSheetReady, (req, res) =
   } else {
     const list = readTeachers();
     const me = list.find(t => t.id === req.teacher.id);
-    if (!me) return res.status(401).json({ error: 'Hindi wasto ang code.' });
+    if (!me) return res.status(401).json({ error: "Invalid code." });
     if (isOpen && !me.resultsSheetUrl) return res.status(400).json({ error: 'SHEET_REQUIRED' });
     me.admSessions = { ...me.admSessions, [req.lesson.id]: { isOpen } };
     writeTeachers(list);
@@ -449,11 +490,11 @@ app.get('/api/admin/teachers', verifyTeacherPin, requireAdmin, (req, res) => {
 
 app.post('/api/admin/teachers', verifyTeacherPin, requireAdmin, requireSheetReady, (req, res) => {
   const name = String(req.body.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
-  if (!name) return res.status(400).json({ error: 'Ilagay ang pangalan ng guro.' });
+  if (!name) return res.status(400).json({ error: "Enter the teacher's name." });
 
   const list = readTeachers();
   if (list.some(t => t.name.toLowerCase() === name.toLowerCase())) {
-    return res.status(400).json({ error: `Nasa listahan na si "${name}".` });
+    return res.status(400).json({ error: `Teacher already exists: "${name}".` });
   }
 
   // Readable prefix from the surname, e.g. "Ma'am Santos" -> SANTOS
@@ -473,7 +514,7 @@ app.post('/api/admin/teachers', verifyTeacherPin, requireAdmin, requireSheetRead
 app.delete('/api/admin/teachers/:id', verifyTeacherPin, requireAdmin, requireSheetReady, (req, res) => {
   const list = readTeachers();
   const next = list.filter(t => t.id !== req.params.id);
-  if (next.length === list.length) return res.status(404).json({ error: 'Hindi nakita ang guro.' });
+  if (next.length === list.length) return res.status(404).json({ error: "Teacher not found." });
   writeTeachers(next);
   res.json({ success: true });
 });
@@ -563,7 +604,7 @@ app.post('/api/voice/transform', (req, res) => {
   try {
     const { audioBase64, preset, semitones, speed } = req.body;
     if (!audioBase64) {
-      return res.status(400).json({ error: 'Walang audio data na natanggap.' });
+      return res.status(400).json({ error: "No audio data was received." });
     }
 
     const tempDir = path.join(__dirname, 'public', 'video_assets');
@@ -618,7 +659,7 @@ app.post('/api/voice/transform', (req, res) => {
 
       if (code !== 0 || !fs.existsSync(outputPath)) {
         console.error('FFmpeg error:', code, stderr);
-        return res.status(500).json({ error: 'Nabigo ang pag-transform ng boses: ' + stderr.slice(-150) });
+        return res.status(500).json({ error: 'Voice transformation failed: ' + stderr.slice(-150) });
       }
 
       const outBuffer = fs.readFileSync(outputPath);
@@ -707,7 +748,7 @@ app.post('/api/submissions', async (req, res) => {
   const { submissionId, studentName, section, answers, guro } = req.body;
 
   if (!studentName || !section || !answers) {
-    return res.status(400).json({ error: 'Pangalan, seksiyon, at mga sagot ay kinakailangan.' });
+    return res.status(400).json({ error: "Student name, section, and answers are required." });
   }
 
   // Always re-read fresh lesson configuration from disk
@@ -848,7 +889,7 @@ function verifyTeacherPin(req, res, next) {
   }
   const teacher = pin && readTeachers().find(t => t.code === pin.toUpperCase());
   if (!teacher) {
-    return res.status(401).json({ error: 'Hindi wasto ang code.' });
+    return res.status(401).json({ error: "Invalid code." });
   }
   req.teacher = teacher;
   next();
@@ -856,7 +897,7 @@ function verifyTeacherPin(req, res, next) {
 
 function requireAdmin(req, res, next) {
   if (!req.teacher || !req.teacher.isAdmin) {
-    return res.status(403).json({ error: 'Para lamang sa pangunahing guro.' });
+    return res.status(403).json({ error: "For the main teacher only." });
   }
   next();
 }
@@ -901,7 +942,7 @@ app.get('/api/admin/results', verifyTeacherPin, (req, res) => {
   } catch (err) {
     console.error('Admin results query error:', err.message);
     res.json({
-      lessonTitle: lessonData.title || 'Aralin',
+      lessonTitle: lessonData.title || 'ADM lesson',
       totalStudents: 0,
       averageScore: 0,
       totalQuestions: 3,
@@ -945,7 +986,7 @@ app.get('/api/admin/export-csv', verifyTeacherPin, (req, res) => {
 
   const fileTag = req.teacher.isAdmin ? '' : '_' + req.teacher.slug;
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', `attachment; filename="Resulta_${lessonData.id}${fileTag}.csv"`);
+  res.setHeader('Content-Disposition', `attachment; filename="Results_${lessonData.id}${fileTag}.csv"`);
   res.send('\uFEFF' + csv);
 });
 
@@ -986,7 +1027,7 @@ app.listen(PORT, () => {
   console.log(`=======================================================`);
   console.log(`🚀 Classroom Video Quiz`);
   console.log(`📱 YouTube Runner: http://localhost:${PORT}/play.html`);
-  console.log(`📊 Guro Dashboard: http://localhost:${PORT}/admin.html`);
+  console.log(`📊 Teacher Dashboard: http://localhost:${PORT}/admin.html`);
   console.log(`🗂️  Google Sheet:   ${sheetOn ? 'connected storage' : 'not set (local files only)'}`);
   console.log(`=======================================================`);
 });

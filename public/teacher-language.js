@@ -551,11 +551,187 @@
   "Each ADM has its own student link and results download. CSV files open in Excel.": {
     "en": "Each ADM has its own student link and results download. CSV files open in Excel.",
     "fil": "Bawat ADM ay may sariling link ng mag-aaral at mga resulta. Maaaring buksan ang CSV sa Excel."
+  },
+  "Still connecting to the Google Sheet. Please try again in a few seconds.": {
+    "en": "Still connecting to the Google Sheet. Please try again in a few seconds.",
+    "fil": "Kumokonekta pa sa Google Sheet. Pakisubukang muli makalipas ang ilang segundo."
+  },
+  "Kumokonekta pa sa Google Sheet. Pakisubukang muli makalipas ang ilang segundo.": {
+    "en": "Still connecting to the Google Sheet. Please try again in a few seconds.",
+    "fil": "Kumokonekta pa sa Google Sheet. Pakisubukang muli makalipas ang ilang segundo."
+  },
+  "Unknown teacher link. Ask your teacher for the correct link.": {
+    "en": "Unknown teacher link. Ask your teacher for the correct link.",
+    "fil": "Hindi kilala ang link ng guro. Hingin muli ang tamang link sa iyong guro."
+  },
+  "Hindi kilala ang link ng guro. Hingin muli ang tamang link sa iyong guro.": {
+    "en": "Unknown teacher link. Ask your teacher for the correct link.",
+    "fil": "Hindi kilala ang link ng guro. Hingin muli ang tamang link sa iyong guro."
+  },
+  "A section list is required.": {
+    "en": "A section list is required.",
+    "fil": "Kailangan ang listahan ng mga seksiyon."
+  },
+  "Kailangan ang listahan ng mga seksiyon.": {
+    "en": "A section list is required.",
+    "fil": "Kailangan ang listahan ng mga seksiyon."
+  },
+  "Invalid code.": {
+    "en": "Invalid code.",
+    "fil": "Hindi wasto ang code."
+  },
+  "Hindi wasto ang code.": {
+    "en": "Invalid code.",
+    "fil": "Hindi wasto ang code."
+  },
+  "Enter the teacher's name.": {
+    "en": "Enter the teacher's name.",
+    "fil": "Ilagay ang pangalan ng guro."
+  },
+  "Ilagay ang pangalan ng guro.": {
+    "en": "Enter the teacher's name.",
+    "fil": "Ilagay ang pangalan ng guro."
+  },
+  "Teacher not found.": {
+    "en": "Teacher not found.",
+    "fil": "Hindi nakita ang guro."
+  },
+  "Hindi nakita ang guro.": {
+    "en": "Teacher not found.",
+    "fil": "Hindi nakita ang guro."
+  },
+  "No audio data was received.": {
+    "en": "No audio data was received.",
+    "fil": "Walang audio data na natanggap."
+  },
+  "Walang audio data na natanggap.": {
+    "en": "No audio data was received.",
+    "fil": "Walang audio data na natanggap."
+  },
+  "Student name, section, and answers are required.": {
+    "en": "Student name, section, and answers are required.",
+    "fil": "Pangalan, seksiyon, at mga sagot ay kinakailangan."
+  },
+  "Pangalan, seksiyon, at mga sagot ay kinakailangan.": {
+    "en": "Student name, section, and answers are required.",
+    "fil": "Pangalan, seksiyon, at mga sagot ay kinakailangan."
+  },
+  "For the main teacher only.": {
+    "en": "For the main teacher only.",
+    "fil": "Para lamang sa pangunahing guro."
+  },
+  "Para lamang sa pangunahing guro.": {
+    "en": "For the main teacher only.",
+    "fil": "Para lamang sa pangunahing guro."
+  },
+  "ADM lesson not found. Check your lesson link.": {
+    "en": "ADM lesson not found. Check your lesson link.",
+    "fil": "Hindi makita ang ADM. Suriin ang link ng aralin."
+  },
+  "Hindi makita ang ADM. Suriin ang link ng aralin.": {
+    "en": "ADM lesson not found. Check your lesson link.",
+    "fil": "Hindi makita ang ADM. Suriin ang link ng aralin."
+  },
+  "Clearing results. Please try saving again in a moment.": {
+    "en": "Clearing results. Please try saving again in a moment.",
+    "fil": "Binubura ang mga resulta. Subukang mag-save muli makalipas ang ilang sandali."
+  },
+  "Binubura ang mga resulta. Subukang mag-save muli makalipas ang ilang sandali.": {
+    "en": "Clearing results. Please try saving again in a moment.",
+    "fil": "Binubura ang mga resulta. Subukang mag-save muli makalipas ang ilang sandali."
+  },
+  "Enter a title and a valid YouTube link or MP4 URL.": {
+    "en": "Enter a title and a valid YouTube link or MP4 URL.",
+    "fil": "Maglagay ng pamagat at wastong link ng YouTube o MP4."
+  },
+  "Maglagay ng pamagat at wastong link ng YouTube o MP4.": {
+    "en": "Enter a title and a valid YouTube link or MP4 URL.",
+    "fil": "Maglagay ng pamagat at wastong link ng YouTube o MP4."
+  },
+  "Add between 1 and 100 questions.": {
+    "en": "Add between 1 and 100 questions.",
+    "fil": "Magdagdag ng 1 hanggang 100 tanong."
+  },
+  "Magdagdag ng 1 hanggang 100 tanong.": {
+    "en": "Add between 1 and 100 questions.",
+    "fil": "Magdagdag ng 1 hanggang 100 tanong."
+  },
+  "Please retry after clearing results finishes.": {
+    "en": "Please retry after clearing results finishes.",
+    "fil": "Subukang muli kapag tapos nang burahin ang mga resulta."
+  },
+  "Subukang muli kapag tapos nang burahin ang mga resulta.": {
+    "en": "Please retry after clearing results finishes.",
+    "fil": "Subukang muli kapag tapos nang burahin ang mga resulta."
+  },
+  "Enter an ADM title.": {
+    "en": "Enter an ADM title.",
+    "fil": "Maglagay ng pamagat ng ADM."
+  },
+  "Maglagay ng pamagat ng ADM.": {
+    "en": "Enter an ADM title.",
+    "fil": "Maglagay ng pamagat ng ADM."
+  },
+  "Type CLEAR to confirm.": {
+    "en": "Type CLEAR to confirm.",
+    "fil": "I-type ang CLEAR upang kumpirmahin."
+  },
+  "I-type ang CLEAR upang kumpirmahin.": {
+    "en": "Type CLEAR to confirm.",
+    "fil": "I-type ang CLEAR upang kumpirmahin."
+  },
+  "Another clear operation is in progress.": {
+    "en": "Another clear operation is in progress.",
+    "fil": "May kasalukuyang pagbubura ng mga tala."
+  },
+  "May kasalukuyang pagbubura ng mga tala.": {
+    "en": "Another clear operation is in progress.",
+    "fil": "May kasalukuyang pagbubura ng mga tala."
+  },
+  "Could not save the clear request. Please retry. Your Google Sheet backup is retained.": {
+    "en": "Could not save the clear request. Please retry. Your Google Sheet backup is retained.",
+    "fil": "Hindi nai-save ang kahilingan sa pagbubura. Subukang muli. Nananatili ang backup sa Google Sheet."
+  },
+  "Hindi nai-save ang kahilingan sa pagbubura. Subukang muli. Nananatili ang backup sa Google Sheet.": {
+    "en": "Could not save the clear request. Please retry. Your Google Sheet backup is retained.",
+    "fil": "Hindi nai-save ang kahilingan sa pagbubura. Subukang muli. Nananatili ang backup sa Google Sheet."
+  },
+  "Missing checkpointId or selectedOption": {
+    "en": "Missing checkpointId or selectedOption",
+    "fil": "Kulang ang tanong o napiling sagot."
+  },
+  "Kulang ang tanong o napiling sagot.": {
+    "en": "Missing checkpointId or selectedOption",
+    "fil": "Kulang ang tanong o napiling sagot."
+  },
+  "Checkpoint not found": {
+    "en": "Checkpoint not found",
+    "fil": "Hindi makita ang tanong."
+  },
+  "Hindi makita ang tanong.": {
+    "en": "Checkpoint not found",
+    "fil": "Hindi makita ang tanong."
+  },
+  "Submission belongs to another ADM.": {
+    "en": "Submission belongs to another ADM.",
+    "fil": "Para sa ibang ADM ang sagot na ito."
+  },
+  "Para sa ibang ADM ang sagot na ito.": {
+    "en": "Submission belongs to another ADM.",
+    "fil": "Para sa ibang ADM ang sagot na ito."
+  },
+  "Could not save your result. Please retry.": {
+    "en": "Could not save your result. Please retry.",
+    "fil": "Hindi nai-save ang iyong resulta. Subukang muli."
+  },
+  "Hindi nai-save ang iyong resulta. Subukang muli.": {
+    "en": "Could not save your result. Please retry.",
+    "fil": "Hindi nai-save ang iyong resulta. Subukang muli."
   }
 };
   let language = 'en';
   try { language = localStorage.getItem('pklp_dashboard_lang') === 'fil' ? 'fil' : 'en'; } catch (_) {}
-  window.teacherText = text => strings[text]?.[language] || text;
+  window.teacherText = text => strings[text]?.[language] || strings[text]?.en || text;
   document.addEventListener('DOMContentLoaded', () => {
     const labels = [];
     // Capture only the static interface that exists before lesson content is fetched.

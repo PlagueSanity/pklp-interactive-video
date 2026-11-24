@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Language ---
   function t(key, vars = {}) {
-    const text = (I18N[lang] && I18N[lang][key]) || I18N.fil[key] || key;
+    const text = (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
     return text.replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m));
   }
 
@@ -287,6 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     sectionsStatus.textContent = '';
     teachersStatus.textContent = '';
+    document.getElementById('adm-status').textContent = '';
+    document.getElementById('sheet-status').textContent = '';
   }
 
   document.querySelectorAll('.lang-switch button').forEach(b => b.addEventListener('click', () => {

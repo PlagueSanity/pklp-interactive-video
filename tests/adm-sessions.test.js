@@ -38,13 +38,18 @@ test('independent ADM sessions, teacher isolation, and restart persistence', asy
   }
   async function stop() { const ended=once(child,'exit'); child.kill(); await ended; }
   t.after(async () => { if(child?.exitCode === null) await stop(); });
-  async function api(url, {pin='TEST-MAIN',body,method}={}) {
+  async function api(url, {pin='TEST-MAIN',body,method,language='en'}={}) {
     const r=await fetch(`http://127.0.0.1:${port}${url}`, {method:method || (body?'POST':'GET'),
-      headers:{'x-teacher-pin':pin,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+      headers:{'x-teacher-pin':pin,'Content-Type':'application/json','Accept-Language':language},body:body?JSON.stringify(body):undefined});
     const value=r.headers.get('content-type')?.includes('application/json')?await r.json():await r.text();
     return {status:r.status,value};
   }
   await start();
+  assert.equal((await api('/api/admin/me',{pin:'INVALID'})).value.error,'Invalid code.');
+  assert.equal((await api('/api/admin/me',{pin:'INVALID',language:'fil'})).value.error,'Hindi wasto ang code.');
+  assert.equal((await api('/api/admin/sections',{body:{sections:null}})).value.error,'A section list is required.');
+  assert.equal((await api('/api/admin/sections',{body:{sections:null},language:'fil'})).value.error,'Kailangan ang listahan ng mga seksiyon.');
+  assert.equal((await api('/api/admin/teachers',{body:{name:''}})).value.error,"Enter the teacher's name.");
   assert.equal((await api('/api/sections')).value.isOpen,true, 'legacy links keep their state');
   const duplicate=await api('/api/admin/duplicate-lesson', {body:{title:'Second ADM'}});
   assert.equal(duplicate.status,201);

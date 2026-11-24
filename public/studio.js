@@ -6,7 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   updateLessonLinks();
   const ui = text => window.teacherText(text);
-  window.addEventListener('teacher-language-change', () => renderCheckpointsList());
+  window.addEventListener('teacher-language-change', () => {
+    renderCheckpointsList();
+    btnPublishAll.textContent = ui(btnPublishAll.disabled ? 'Saving ADM…' : '🚀 SAVE AND PUBLISH ADM');
+  });
   let createNew = new URLSearchParams(location.search).get('new') === '1';
   let currentPin = sessionStorage.getItem('pklp_teacher_pin') || '';
   let studioPlayer = null;

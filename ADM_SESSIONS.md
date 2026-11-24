@@ -13,6 +13,8 @@ results; lesson editing and creation remain main-teacher actions.
 English is the default dashboard and studio interface. Select Filipino using the language
 control. The choice is remembered on that browser. Teacher-authored lesson titles, questions,
 answers, and feedback are not translated when the interface language changes.
+English mode always uses English as its fallback. API validation errors follow the selected
+interface language; requests default to English unless Filipino is explicitly selected.
 
 ## Compatibility and storage
 
@@ -35,6 +37,8 @@ and uses generated data inside `.artifacts/`; it does not read production creden
 write to a real Google Sheet. It covers independent session toggles, teacher isolation,
 video editing, copying without records, answer-key protection, CSV filtering, and restart
 persistence. Browser QA also checked the dashboard tabs and both interface languages.
+Language regression tests check every dashboard translation key, English source markup,
+studio/library label translations, request language headers, and localized validation errors.
 
 For development, `DATA_DIR` can point to an isolated data directory containing `lesson.json`.
 Production defaults to the existing `data/` directory.

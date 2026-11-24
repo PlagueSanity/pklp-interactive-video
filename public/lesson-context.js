@@ -7,6 +7,13 @@
     if (typeof input === 'string') {
       const lesson = new URLSearchParams(location.search).get('lesson');
       const url = new URL(input, location.href);
+      if (url.origin === location.origin && url.pathname.startsWith('/api/')) {
+        let language = 'en';
+        try { language = localStorage.getItem('pklp_dashboard_lang') === 'fil' ? 'fil' : 'en'; } catch (_) {}
+        const headers = new Headers(init?.headers);
+        headers.set('Accept-Language', language);
+        init = { ...init, headers };
+      }
       if (url.origin === location.origin && scoped.has(url.pathname) && lesson) {
         url.searchParams.set('lesson', lesson);
         input = url.href;
